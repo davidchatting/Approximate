@@ -1,7 +1,7 @@
 # Approximate Library
 Approximate is an [Arduino](http://www.arduino.cc/download) library for building spatially aware devices - it works with the ESP8266 or ESP32. 
 
-The ESP8266 and ESP32 module work only with 2.4GHz WiFi and can not interact with 5GHz networks - so the Approximate library has this limitation too.
+The ESP8266 and ESP32 modules work only with 2.4GHz WiFi and can not interact with 5GHz networks - so the Approximate library has this limitation too.
 
 ## When We're Close...
 Discover a device when it is close by in proximity...
@@ -36,7 +36,7 @@ void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
 ```
 
 ## Find My...
-Find a device on your WiFi network using their signal strength - you can search by [MAC address](https://en.wikipedia.org/wiki/MAC_address) or by manufacter with the [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier).
+Find a device on your WiFi network using its signal strength - you can search by [MAC address](https://en.wikipedia.org/wiki/MAC_address) or by manufacter with the [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier).
 
 ```
 #include <Approximate.h>
@@ -51,7 +51,8 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
 
   if (approx.init("MyHomeWiFi", "password")) {
-    approx.findDevice("XX:XX:XX:XX:XX:XX", onFoundDevice);
+    approx.setActiveDeviceFilter("XX:XX:XX:XX:XX:XX", Filter::SENDS);
+    approx.setActiveDeviceHandler(onActiveDevice);
     approx.start();
   }
 }
@@ -67,7 +68,7 @@ void loop() {
   }
 }
 
-void onFoundDevice(Device *device, Approximate::DeviceEvent event) {
+void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
   currentRSSI = device->getRSSI();
 }
 ```
