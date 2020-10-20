@@ -1,10 +1,10 @@
 # Approximate Library
-Approximate is an [Arduino](http://www.arduino.cc/download) library for building spatially aware devices - it works with the ESP8266 or ESP32. 
+Approximate is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the ESP8266 and ESP32
 
-The ESP8266 and ESP32 module work only with 2.4GHz WiFi and can not interact with 5GHz networks - so the Approximate library has this limitation too.
+The ESP8266 and ESP32 modules work only with 2.4GHz WiFi and can not interact with 5GHz networks - so the Approximate library has this limitation too.
 
 ## When We're Close...
-Discover a device when it is close by in proximity...
+Discover a device when it is in proximity...
 
 ```
 #include <Approximate.h>
