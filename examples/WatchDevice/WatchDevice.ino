@@ -47,7 +47,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
-    if(event == Approximate::DOWNLOAD) {
+    if(event == Approximate::RECEIVE) {
       ledOnUntilMs = millis() + (device -> getPayloadLengthBytes()/10);
     }
 }
