@@ -12,7 +12,6 @@ bool Approximate::running = false;
 
 PacketSniffer *Approximate::packetSniffer = PacketSniffer::getInstance();
 ArpTable *Approximate::arpTable = NULL;
-bool Approximate::proximateIPAddressRequired = false;
 
 Approximate::DeviceHandler Approximate::activeDeviceHandler = NULL;
 Approximate::DeviceHandler Approximate::proximateDeviceHandler = NULL;
@@ -343,10 +342,9 @@ void Approximate::setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool
   Approximate::activeDeviceHandler = activeDeviceHandler;
 }
 
-void Approximate::setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold, int lastSeenTimeoutMs, bool requireIPAddress) {
+void Approximate::setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold, int lastSeenTimeoutMs) {
   setProximateRSSIThreshold(rssiThreshold);
   setProximateLastSeenTimeoutMs(lastSeenTimeoutMs);
-  proximateIPAddressRequired = requireIPAddress;
   Approximate::proximateDeviceHandler = deviceHandler;
 }
 
@@ -402,19 +400,15 @@ void Approximate::onProximateDevice(Device *d) {
     if(proximateDevice) {
       proximateDevice->update(d);
 
-      if(activeDeviceHandler && (!proximateIPAddressRequired || proximateDevice -> hasIPAddress())) {
+      if(activeDeviceHandler) {
         DeviceEvent event = proximateDevice -> isUploading() ? Approximate::UPLOAD : Approximate::DOWNLOAD;
         activeDeviceHandler(proximateDevice, event);
       }
     }
     else {
       proximateDevice = new Device(d);
-
-      if(!proximateIPAddressRequired || proximateDevice -> hasIPAddress()) {
-        proximateDeviceList.Add(proximateDevice);
-        proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
-      }
-      else delete proximateDevice;
+      proximateDeviceList.Add(proximateDevice);
+      proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
     }
   }
 }

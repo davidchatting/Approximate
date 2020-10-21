@@ -1,10 +1,10 @@
 # Approximate Library
-Approximate is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the ESP8266 and ESP32
+Approximate is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the ESP8266 and ESP32.
 
-The ESP8266 and ESP32 modules work only with 2.4GHz WiFi and can not interact with 5GHz networks - so the Approximate library has this limitation too.
+The Approximate library works 2.4GHz WiFi networks, but not with 5GHz networks as neither ESP8266 or ESP32 support this technology.
 
 ## When We're Close...
-Discover a device when it is in proximity...
+Discover a device in proximity...
 
 ```
 #include <Approximate.h>
@@ -34,6 +34,35 @@ void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
     }
 }
 ```
+
+`setProximateDeviceHandler()` takes a `DeviceHandler` callback function parameter (here `onCloseByDevice`) that will be called in the case that one of these events occurs for a device in proximity:
+
+* `Approximate::ARRIVE` once when the device first arrives in proximity
+
+* `Approximate::DEPART` once when the device departs and is no longer seen in proximity
+
+* `Approximate::UPLOAD` everytime the device uploads (sends) data
+
+* `Approximate::DOWNLOAD` everytime the device downloads (receives) data
+
+`setProximateDeviceHandler()` has two further optional parameters that define how proximity is managed, the full definition is:
+
+```
+void Approximate::setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
+```
+
+The parameter `rssiThreshold` defines the RSSI threshold value that is considered to be in proximity. ([RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) is a measure of WiFi signal strength used to estimate proximity. While `rssiThreshold` can be defined numerically, four predefined vales are available for use, borrowing from the language of [proxemics](https://en.wikipedia.org/wiki/Proxemics):
+
+* `APPROXIMATE_INTIMATE_RSSI`
+* `APPROXIMATE_PERSONAL_RSSI`
+* `APPROXIMATE_SOCIAL_RSSI`
+* `APPROXIMATE_PUBLIC_RSSI`
+
+`APPROXIMATE_PERSONAL_RSSI` is the default value.
+
+The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `UPLOAD` and `DOWNLOAD` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value.
+
+The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example identifies the device by its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and demonstrates the `Device::getMacAddressAsString()` function.
 
 ## Find My...
 Find a device on your WiFi network using its signal strength - you can search by [MAC address](https://en.wikipedia.org/wiki/MAC_address) or by manufacter with the [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier).

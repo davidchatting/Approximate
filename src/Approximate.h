@@ -36,10 +36,10 @@ class Approximate {
     } PacketType;
 
     typedef enum {
-      UPLOAD,
-      DOWNLOAD,
       ARRIVE,
       DEPART,
+      UPLOAD,
+      DOWNLOAD,
       INACTIVE
     } DeviceEvent;
 
@@ -60,7 +60,6 @@ class Approximate {
 
     static PacketSniffer *packetSniffer;
     static ArpTable *arpTable;
-    static bool proximateIPAddressRequired;
 
     String ssid;
     String password;
@@ -142,7 +141,7 @@ class Approximate {
     bool isProximateDevice(eth_addr &macAddress);
 
     void setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive = true);
-    void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000, bool requireIPAddress = false);
+    void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
 
     static void setProximateRSSIThreshold(int proximateRSSIThreshold);
     static void setProximateLastSeenTimeoutMs(int proximateLastSeenTimeoutMs);
