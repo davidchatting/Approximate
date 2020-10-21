@@ -1,17 +1,15 @@
 # The Approximate Library
 The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the ESP8266 and ESP32.
 
-Approximate works 2.4GHz WiFi networks, but not 5GHz networks, as neither ESP8266 or ESP32 support this technology.
+Approximate works with 2.4GHz WiFi networks, but not 5GHz networks, as neither ESP8266 or ESP32 support this technology.
 
-Every Approximate sketch requires this essential structure - if the specified WiFi network can not be found or the authentication fails `init()` will return false.
+Every Approximate sketch requires this essential structure:
 
 ```
 #include <Approximate.h>
 Approximate approx;
 
 void setup() {
-    Serial.begin(9600);
-
     if (approx.init("MyHomeWiFi", "password")) {
         approx.start();
     }
@@ -61,8 +59,7 @@ The Proximate Device Handler is set by `setProximateDeviceHandler()` that takes 
 * `Approximate::ARRIVE` once when the device first arrives in proximity
 * `Approximate::DEPART` once when the device departs and is no longer seen in proximity
 * `Approximate::SEND` every time the device sends (uploads) data
-
-* `Approximate::RECEIVE` every time the device receives (downloads) data - however unless the router is also in proximity, RECEIVE events will not be seen
+* `Approximate::RECEIVE` every time the device receives (downloads) data - however, unless the router is also in proximity, RECEIVE events will not be seen
 
 `setProximateDeviceHandler()` has two further optional parameters that define how proximity is managed, the full definition is:
 
@@ -140,4 +137,4 @@ void addActiveDeviceFilter(String macAddress);
 void addActiveDeviceFilter(int oui);
 ```
 
-The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and renders this as a flashing LED that speeds up as the distance decreases.
+The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and renders this as a flashing LED, that speeds up as the distance decreases.
