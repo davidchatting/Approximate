@@ -25,7 +25,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
 
   if (approx.init("MyHomeWiFi", "password")) {
-    approx.setActiveDeviceFilter("XX:XX:XX:XX:XX:XX", Filter::SENDS);
+    approx.setActiveDeviceFilter("XX:XX:XX:XX:XX:XX");
     approx.setActiveDeviceHandler(onActiveDevice);
     approx.start();
   }
@@ -43,5 +43,7 @@ void loop() {
 }
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
-  ledToggleIntervalMs = map(device->getRSSI(), -100, 0, 1000, 0);
+  if(event == Approximate::SEND) {  
+    ledToggleIntervalMs = map(device->getRSSI(), -100, 0, 1000, 0);
+  }
 }
