@@ -219,56 +219,56 @@ void Approximate::printWiFiStatus() {
   }
 }
 
-void Approximate::addActiveDeviceFilter(String macAddress, Filter::Direction direction) {
+void Approximate::addActiveDeviceFilter(String macAddress) {
   eth_addr macAddress_eth_addr;
   String_to_eth_addr(macAddress, macAddress_eth_addr);
 
-  addActiveDeviceFilter(macAddress_eth_addr, direction);
+  addActiveDeviceFilter(macAddress_eth_addr);
 }
 
-void Approximate::addActiveDeviceFilter(Device &device, Filter::Direction direction) {
-  addActiveDeviceFilter(device.macAddress, direction);
+void Approximate::addActiveDeviceFilter(Device &device) {
+  addActiveDeviceFilter(device.macAddress);
 }
 
-void Approximate::addActiveDeviceFilter(Device *device, Filter::Direction direction) {
-  addActiveDeviceFilter(device -> macAddress, direction);
+void Approximate::addActiveDeviceFilter(Device *device) {
+  addActiveDeviceFilter(device -> macAddress);
 }
 
-void Approximate::addActiveDeviceFilter(int oui, Filter::Direction direction) {
+void Approximate::addActiveDeviceFilter(int oui) {
   eth_addr macAddress;
   oui_to_eth_addr(oui, macAddress);
 
-  addActiveDeviceFilter(macAddress, direction);
+  addActiveDeviceFilter(macAddress);
 }
 
-void Approximate::addActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction) {
-  Filter *f = new Filter(macAddress, direction);
+void Approximate::addActiveDeviceFilter(eth_addr &macAddress) {
+  Filter *f = new Filter(macAddress);
   activeDeviceFilterList.Add(f);
 }
 
-void Approximate::setActiveDeviceFilter(String macAddress, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(String macAddress) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(macAddress, direction);
+  addActiveDeviceFilter(macAddress);
 }
 
-void Approximate::setActiveDeviceFilter(Device &device, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(Device &device) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(device, direction);
+  addActiveDeviceFilter(device);
 }
 
-void Approximate::setActiveDeviceFilter(Device *device, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(Device *device) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(device, direction);
+  addActiveDeviceFilter(device);
 }
 
-void Approximate::setActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(eth_addr &macAddress) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(macAddress, direction);
+  addActiveDeviceFilter(macAddress);
 }
 
-void Approximate::setActiveDeviceFilter(int oui, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(int oui) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(oui, direction);
+  addActiveDeviceFilter(oui);
 }
 
 void Approximate::removeActiveDeviceFilter(String macAddress) {
@@ -381,7 +381,7 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
       }
 
       if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
-        DeviceEvent event = device -> isUploading() ? Approximate::UPLOAD : Approximate::DOWNLOAD;
+        DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
         activeDeviceHandler(device, event); 
       }
     }
@@ -401,7 +401,7 @@ void Approximate::onProximateDevice(Device *d) {
       proximateDevice->update(d);
 
       if(activeDeviceHandler) {
-        DeviceEvent event = proximateDevice -> isUploading() ? Approximate::UPLOAD : Approximate::DOWNLOAD;
+        DeviceEvent event = proximateDevice -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
         activeDeviceHandler(proximateDevice, event);
       }
     }

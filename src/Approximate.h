@@ -38,8 +38,8 @@ class Approximate {
     typedef enum {
       ARRIVE,
       DEPART,
-      UPLOAD,
-      DOWNLOAD,
+      SEND,
+      RECEIVE,
       INACTIVE
     } DeviceEvent;
 
@@ -47,8 +47,8 @@ class Approximate {
 
     static String toString(DeviceEvent e) {
       switch (e) {
-        case Approximate::UPLOAD:     return("UPLOAD");
-        case Approximate::DOWNLOAD:   return("DOWNLOAD");
+        case Approximate::SEND:       return("SEND");
+        case Approximate::RECEIVE:    return("RECEIVE");
         case Approximate::ARRIVE:     return("ARRIVE");
         case Approximate::DEPART:     return("DEPART");
         default:                      return("INACTIVE");
@@ -114,18 +114,18 @@ class Approximate {
     void loop();
 
     //add one more filter
-    void addActiveDeviceFilter(String macAddress, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(Device &device, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(Device *device, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(int oui, Filter::Direction direction = Filter::EITHER);
+    void addActiveDeviceFilter(String macAddress);
+    void addActiveDeviceFilter(Device &device);
+    void addActiveDeviceFilter(Device *device);
+    void addActiveDeviceFilter(eth_addr &macAddress);
+    void addActiveDeviceFilter(int oui);
 
     //set exactly one filter
-    void setActiveDeviceFilter(String macAddress, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(Device &device, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(Device *device, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(int oui, Filter::Direction direction = Filter::EITHER);
+    void setActiveDeviceFilter(String macAddress);
+    void setActiveDeviceFilter(Device &device);
+    void setActiveDeviceFilter(Device *device);
+    void setActiveDeviceFilter(eth_addr &macAddress);
+    void setActiveDeviceFilter(int oui);
 
     void removeActiveDeviceFilter(String macAddress);
     void removeActiveDeviceFilter(Device &device);
