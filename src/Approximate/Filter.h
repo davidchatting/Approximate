@@ -17,10 +17,10 @@
 class Filter {
     public:
         typedef enum {
-            NEITHER,
             SENDS,
             RECEIVES,
-            EITHER
+            EITHER,
+            NEITHER
         } Direction;
 
         eth_addr macAddress;
