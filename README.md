@@ -62,7 +62,7 @@ The parameter `rssiThreshold` defines the RSSI threshold value that is considere
 
 The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `UPLOAD` and `DOWNLOAD` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value.
 
-The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example identifies the device by its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and demonstrates the `Device::getMacAddressAsString()` function.
+The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example identifies the device by its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and demonstrates the `Device::getMacAddressAsString()` function. [MAC addresses](https://en.wikipedia.org/wiki/MAC_address) are the primary way in which the Approximate library identifies devices.
 
 ## Find My...
 Find a device on your WiFi network using its signal strength - you can search by [MAC address](https://en.wikipedia.org/wiki/MAC_address) or by manufacter with the [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier).
