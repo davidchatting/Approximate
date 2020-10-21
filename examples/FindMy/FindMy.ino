@@ -17,7 +17,8 @@ Approximate approx;
   const int LED_PIN = 2;
 #endif
 bool ledState = LOW;
-int currentRSSI = 1;
+long ledToggleAtMs = 0;
+int ledToggleIntervalMs = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -33,14 +34,14 @@ void setup() {
 void loop() {
   approx.loop();
 
-  if(currentRSSI < 0) {
-    int t = map(currentRSSI, -100, 0, 1000, 0);
-    digitalWrite(LED_PIN, ledState);
+  digitalWrite(LED_PIN, ledState);
+  
+  if(ledToggleAtMs > 0 && millis() > ledToggleAtMs) {
     ledState = !ledState;
-    delay(t);
+    ledToggleAtMs = millis() + ledToggleIntervalMs;
   }
 }
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
-  currentRSSI = device->getRSSI();
+  ledToggleIntervalMs = map(device->getRSSI(), -100, 0, 1000, 0);
 }

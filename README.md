@@ -1,10 +1,10 @@
-# Approximate Library
+# The Approximate Library
 Approximate is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the ESP8266 and ESP32.
 
 The Approximate library works 2.4GHz WiFi networks, but not 5GHz networks, as neither ESP8266 or ESP32 support this technology.
 
 ## When We're Close...
-Discover a device in proximity...
+Identify a device on your WiFi network that's in proximity.
 
 ```
 #include <Approximate.h>
@@ -62,7 +62,7 @@ The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device
 The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example identifies the device by its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and demonstrates the `Device::getMacAddressAsString()` function. MAC addresses are the primary way in which the Approximate library identifies network devices.
 
 ## Find My...
-Find a device on your WiFi network using its signal strength - you can search by [MAC address](https://en.wikipedia.org/wiki/MAC_address) or by manufacter with the [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier).
+Track down a device on your WiFi network using its signal strength - you can search by [MAC address](https://en.wikipedia.org/wiki/MAC_address) or by manufacter with the [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier).
 
 ```
 #include <Approximate.h>
@@ -70,7 +70,8 @@ Approximate approx;
 
 const int LED_PIN = 2;
 bool ledState = LOW;
-int currentRSSI = 0;
+long ledToggleAtMs = 0;
+int ledToggleIntervalMs = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -86,15 +87,15 @@ void setup() {
 void loop() {
   approx.loop();
 
-  if(currentRSSI < 0) {
-    int t = map(currentRSSI, -100, 0, 1000, 0);
-    digitalWrite(LED_PIN, ledState);
+  digitalWrite(LED_PIN, ledState);
+  
+  if(ledToggleAtMs > 0 && millis() > ledToggleAtMs) {
     ledState = !ledState;
-    delay(t);
+    ledToggleAtMs = millis() + ledToggleIntervalMs;
   }
 }
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
-  currentRSSI = device->getRSSI();
+  ledToggleIntervalMs = map(device->getRSSI(), -100, 0, 1000, 0);
 }
 ```
