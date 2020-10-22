@@ -33,7 +33,7 @@ void setup() {
     Serial.begin(9600);
 
     if (approx.init("MyHomeWiFi", "password")) {
-        approx.setProximateDeviceHandler(onCloseByDevice);
+        approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_PERSONAL_RSSI);
         approx.start();
     }
 }
