@@ -1,5 +1,5 @@
 # The Approximate Library
-The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the ESP8266 and ESP32.
+The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions with the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) and [ESP32](https://en.wikipedia.org/wiki/ESP32) and your Internet of Things.
 
 Approximate works with 2.4GHz WiFi networks, but not 5GHz networks, as neither ESP8266 or ESP32 support this technology.
 
@@ -20,10 +20,10 @@ void loop() {
 }
 ```
 
-Approximate can interact with devices on your home network in proximity (using a Proximate Device Handler) or simply when they are active (using a Active Device Handler). The examples on this page demonstrate both and combinations of the two.
+Approximate can interact with devices in proximity (using a Proximate Device Handler) or simply when they are active (using a Active Device Handler). The examples on this page demonstrate combinations of these.
 
 ## When We're Close... using a Proximate Device Handler
-Identify a WiFi device in proximity and print out its [MAC address](https://en.wikipedia.org/wiki/MAC_address).
+This example identifies WiFi devices in proximity and prints out their [MAC addresses](https://en.wikipedia.org/wiki/MAC_address).
 
 ```
 #include <Approximate.h>
@@ -54,31 +54,31 @@ void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-The Proximate Device Handler is set by `setProximateDeviceHandler()` that takes a `DeviceHandler` callback function parameter (here `onCloseByDevice`) that will be called in the case that one of these events occurs for a device in proximity:
+The Proximate Device Handler is set by `setProximateDeviceHandler()`, it takes a `DeviceHandler` callback function parameter (here `onCloseByDevice`) and a value for the `rssiThreshold` parameter that describes range that we consider to be in proximity (here `APPROXIMATE_PERSONAL_RSSI`). [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication) is a measure of WiFi signal strength used here to estimate proximity. It is measured in [dBm](https://en.wikipedia.org/wiki/DBm) and at close proximity (where the reception is good) its value will approach zero, as the signal degrades over distance and through objects and walls, the value will fall - for instance an RSSI of -50 represents a relatively strong signal. The library predefined four values of `rssiThreshold` for use, that borrow from the language of [proxemics](https://en.wikipedia.org/wiki/Proxemics):
 
-* `Approximate::ARRIVE` once when the device first arrives in proximity
-* `Approximate::DEPART` once when the device departs and is no longer seen in proximity
+* `APPROXIMATE_INTIMATE_RSSI` -20 (10 centimetres)
+* `APPROXIMATE_PERSONAL_RSSI` -40 (1 metre)
+* `APPROXIMATE_SOCIAL_RSSI`   -60 (4 metres)
+* `APPROXIMATE_PUBLIC_RSSI`   -80 (8 metres)
+
+These values are extremely approximate and represent the highest values that might be achieved at these ranges. `rssiThreshold` can be defined numerically and if it is not set `setProximateDeviceHandler()` defaults to a value of `APPROXIMATE_PERSONAL_RSSI`.
+
+The callback function `onCloseByDevice()` receives both a pointer to a `Device` and a `Approximate::DeviceEvent` for each new observation - here the events `Approximate::ARRIVE` and `Approximate::DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out. MAC addresses are the primary way in which the Approximate library identifies network devices.
+
+There are four event types that a `DeviceHandler` will see: 
+
+* `Approximate::ARRIVE` once when the device first arrives in proximity (only for Proximate Device Handlers)
+* `Approximate::DEPART` once when the device departs and is no longer seen in proximity (only for Proximate Device Handlers)
 * `Approximate::SEND` every time the device sends (uploads) data
-* `Approximate::RECEIVE` every time the device receives (downloads) data - however, unless the router is also in proximity, RECEIVE events will not be seen
+* `Approximate::RECEIVE` every time the device receives (downloads) data (rarely for Proximate Device Handlers, unless the router is also in proximity)
 
-`setProximateDeviceHandler()` has two further optional parameters that define how proximity is managed, the full definition is:
+The full definition for `setProximateDeviceHandler()` is:
 
 ```
 void Approximate::setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
 ```
 
-The parameter `rssiThreshold` defines the RSSI threshold value that is considered to be in proximity. [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication) is a measure of WiFi signal strength used to estimate proximity. While `rssiThreshold` can be defined numerically, four predefined vales are available for use, borrowing from the language of [proxemics](https://en.wikipedia.org/wiki/Proxemics):
-
-* `APPROXIMATE_INTIMATE_RSSI`
-* `APPROXIMATE_PERSONAL_RSSI`
-* `APPROXIMATE_SOCIAL_RSSI`
-* `APPROXIMATE_PUBLIC_RSSI`
-
-`APPROXIMATE_PERSONAL_RSSI` is the default value.
-
 The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `SEND` and (sometimes) `RECEIVE` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value.
-
-The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example identifies the device by its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and demonstrates the `Device::getMacAddressAsString()` function. MAC addresses are the primary way in which the Approximate library identifies network devices.
 
 ## Find My...  using an Active Device Handler
 Track down a device on your WiFi network using its signal strength ([RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) and flash an LED faster the closer it is.
@@ -138,3 +138,9 @@ void addActiveDeviceFilter(int oui);
 ```
 
 The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and renders this as a flashing LED, that speeds up as the distance decreases.
+
+## Close By MQTT
+
+## Close By Sonoff
+
+## Watch Device
