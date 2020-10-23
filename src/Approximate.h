@@ -65,6 +65,7 @@ class Approximate {
     String password;
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
+    bool init(int channel, uint8_t *bssid, bool ipAddressResolution);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
 
     //TODO: template this?
@@ -106,6 +107,7 @@ class Approximate {
 
   public:
     Approximate();
+    bool init(bool ipAddressResolution = false);
     bool init(String ssid, String password = "", bool ipAddressResolution = false);
 
     void start(voidFnPtr thenFnPtr = NULL);

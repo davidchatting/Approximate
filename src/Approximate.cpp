@@ -26,37 +26,63 @@ int Approximate::proximateLastSeenTimeoutMs = 60000;
 Approximate::Approximate() {
 }
 
-bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(100);
+bool Approximate::init(bool ipAddressResolution) {
+  bool success = false;
 
-  bool networkFound = false;
+  if(WiFi.status() == WL_CONNECTED) {
+    this->ssid = WiFi.SSID();
+    this->password = WiFi.psk();
+
+    if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution)) {
+      success = true;
+    }
+  }
+
+  return(success);
+}
+
+bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
+  bool success = false;
+
   int n = WiFi.scanNetworks();
-  for (int i = 0; i < n && !networkFound; ++i) {
+  for (int i = 0; i < n && !success; ++i) {
     if(WiFi.SSID(i) == ssid) {
       if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
         //Network is either open or a password is supplied
-        Serial.printf("\n-\nNetwork: %s\t\tRouter: %s\t\tChannel: %i\n-\n", ssid.c_str(), WiFi.BSSIDstr(i).c_str(), WiFi.channel(i));
-
-        packetSniffer -> init(WiFi.channel(i));
-        packetSniffer -> setPacketEventHandler(packetEventHandler);
-
-        if(ipAddressResolution) arpTable = ArpTable::getInstance();
-
-        eth_addr networkBSSID; 
-        uint8_t_to_eth_addr(WiFi.BSSID(i), networkBSSID);
-        setLocalBSSID(networkBSSID);
-
         this->ssid = ssid;
         this->password = password;
 
-        networkFound = true;
+        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution)) {
+          success = true;
+        }
       }
     }
   }
 
-  return(networkFound);
+  return(success);
+}
+
+bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution) {
+  bool success = true;
+
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+
+  packetSniffer -> init(channel);
+  packetSniffer -> setPacketEventHandler(packetEventHandler);
+
+  eth_addr networkBSSID; 
+  uint8_t_to_eth_addr(bssid, networkBSSID);
+  setLocalBSSID(networkBSSID);
+
+  String networkBSSIDAsString;
+  eth_addr_to_String(networkBSSID, networkBSSIDAsString);
+  Serial.printf("\n-\nRouter: %s\t\tChannel: %i\n-\n", networkBSSIDAsString.c_str(), channel);
+
+  if(ipAddressResolution) arpTable = ArpTable::getInstance();
+
+  return(success);
 }
 
 void Approximate::onceWifiStatus(wl_status_t status, voidFnPtr callBackFnPtr) {
