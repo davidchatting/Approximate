@@ -162,6 +162,7 @@ class Approximate {
     static bool oui_to_eth_addr(int oui, eth_addr &out);
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
+    static bool eth_addr_to_c_str(eth_addr &in, char *out);
     static bool wifi_pkt_to_Packet(wifi_promiscuous_pkt_t *in, uint16_t payloadLengthBytes, Packet *out);
     static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
 };

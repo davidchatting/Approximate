@@ -534,8 +534,16 @@ bool Approximate::eth_addr_to_String(eth_addr &in, String &out) {
   bool success = true;
 
   char macAddressAsCharArray[18];
-  sprintf(macAddressAsCharArray, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
+  eth_addr_to_c_str(in, macAddressAsCharArray);
   out = String(macAddressAsCharArray);
+
+  return(success);
+}
+
+bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
+  bool success = true;
+
+  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
 
   return(success);
 }
