@@ -27,7 +27,7 @@ void setup() {
   if (approx.init("MyHomeWiFi", "password")) {
     approx.setActiveDeviceFilter("XX:XX:XX:XX:XX:XX");
     approx.setActiveDeviceHandler(onActiveDevice);
-    approx.start();
+    approx.begin();
   }
 }
 

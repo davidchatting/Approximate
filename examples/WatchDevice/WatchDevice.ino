@@ -26,7 +26,7 @@ void setup() {
   if (approx.init("MyHomeWiFi", "password")) {
     approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI, /*lastSeenTimeoutMs*/ 1000);
     approx.setActiveDeviceHandler(onActiveDevice, /*inclusive*/ false);
-    approx.start();
+    approx.begin();
   }
 }
 

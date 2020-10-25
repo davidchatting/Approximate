@@ -22,9 +22,9 @@ PacketSniffer* PacketSniffer::getInstance() {
   return &ps;
 }
 
-void PacketSniffer::start() {
+void PacketSniffer::begin() {
   if(!running) {
-    Serial.println("PacketSniffer::start");
+    Serial.println("PacketSniffer::begin");
 
     #if defined(ESP8266)
       wifi_set_opmode(STATION_MODE);  //promiscuous works only with STATION_MODE
@@ -53,9 +53,9 @@ void PacketSniffer::start() {
   }
 }
 
-void PacketSniffer::stop() {
+void PacketSniffer::end() {
   if(running) {
-    Serial.println("PacketSniffer::stop");
+    Serial.println("PacketSniffer::end");
 
     #if defined(ESP8266)
       wifi_promiscuous_enable(0);

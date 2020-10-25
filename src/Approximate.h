@@ -110,8 +110,8 @@ class Approximate {
     bool init(bool ipAddressResolution = false);
     bool init(String ssid, String password = "", bool ipAddressResolution = false);
 
-    void start(voidFnPtr thenFnPtr = NULL);
-    void stop();
+    void begin(voidFnPtr thenFnPtr = NULL);
+    void end();
 
     void loop();
 

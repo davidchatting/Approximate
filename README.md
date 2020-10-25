@@ -14,7 +14,7 @@ Approximate approx;
 
 void setup() {
     if (approx.init("MyHomeWiFi", "password")) {
-        approx.start();
+        approx.begin();
     }
 }
 
@@ -35,7 +35,7 @@ void setup() {
 
     if (approx.init("MyHomeWiFi", "password")) {
         approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_PERSONAL_RSSI);
-        approx.start();
+        approx.begin();
     }
 }
 
@@ -100,7 +100,7 @@ void setup() {
   if (approx.init("MyHomeWiFi", "password")) {
     approx.setActiveDeviceFilter("XX:XX:XX:XX:XX:XX");
     approx.setActiveDeviceHandler(onActiveDevice);
-    approx.start();
+    approx.begin();
   }
 }
 

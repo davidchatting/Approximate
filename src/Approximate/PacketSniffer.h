@@ -17,8 +17,8 @@ class PacketSniffer {
   public:
     static PacketSniffer* getInstance();
     void init(int channel=1, bool isScanning=false);
-    void start();
-    void stop();
+    void begin();
+    void end();
     void loop();
 
     uint8_t getCurrentChannel();

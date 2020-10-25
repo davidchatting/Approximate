@@ -140,15 +140,15 @@ void Approximate::onceWifiStatus(wl_status_t status, voidFnPtrWithFnPtrPayload c
   }
 }
 
-void Approximate::start(voidFnPtr thenFnPtr) {
-  Serial.println("Approximate::start");
+void Approximate::begin(voidFnPtr thenFnPtr) {
+  Serial.println("Approximate::begin");
 
   onceWifiStatus(WL_CONNECTED, [](voidFnPtr thenFnPtr) {
     if(thenFnPtr) thenFnPtr();
 
     if(arpTable) {
       arpTable -> scan(); //blocking
-      arpTable -> start();
+      arpTable -> begin();
     }
 
     #if defined(ESP8266)
@@ -156,16 +156,16 @@ void Approximate::start(voidFnPtr thenFnPtr) {
     #endif
 
     //start the packetSniffer after the scan is complete:
-    if(packetSniffer)  packetSniffer -> start();
+    if(packetSniffer)  packetSniffer -> begin();
 
     running = true;
   }, thenFnPtr);
   connectWiFi();
 }
 
-void Approximate::stop() {
-  if (packetSniffer)  packetSniffer -> stop();
-  if (arpTable)       arpTable -> stop();
+void Approximate::end() {
+  if (packetSniffer)  packetSniffer -> end();
+  if (arpTable)       arpTable -> end();
 
   running = false;
 }
@@ -215,7 +215,7 @@ void Approximate::connectWiFi(String ssid, String password) {
   if(WiFi.status() != WL_CONNECTED) {
     if(ssid.length() > 0) {
       #if defined(ESP8266)
-        if (packetSniffer)  packetSniffer -> stop();
+        if (packetSniffer)  packetSniffer -> end();
       #endif
 
       Serial.printf("Approximate::connectWiFi %s %s\n", ssid.c_str(), password.c_str());
@@ -228,7 +228,7 @@ void Approximate::disconnectWiFi() {
   WiFi.disconnect();
 
   #if defined(ESP8266)
-    if (running && packetSniffer)  packetSniffer -> start();
+    if (running && packetSniffer)  packetSniffer -> begin();
   #endif
 }
 

@@ -33,11 +33,11 @@ ArpTable* ArpTable::getInstance(int updateIntervalMs, bool repeatedScans) {
     return &at;
 }
 
-void ArpTable::start() {
+void ArpTable::begin() {
     running = true;
 }
 
-void ArpTable::stop() {
+void ArpTable::end() {
     running = false;
 }
 
@@ -46,7 +46,7 @@ void ArpTable::loop() {
         lastUpdateTimeMs = millis();
         find(scannedDevice, true);
     
-        if((scannedDevice == 255) && !repeatedScans) stop();
+        if((scannedDevice == 255) && !repeatedScans) end();
         else {
             scannedDevice = (scannedDevice + 1) % 256;
         }

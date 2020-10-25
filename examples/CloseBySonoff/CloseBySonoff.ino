@@ -43,7 +43,7 @@ void setup() {
 
   if (approx.init("MyHomeWiFi", "password", true)) {
     approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_SOCIAL_RSSI, 5000);
-    approx.start();
+    approx.begin();
   }
 }
 

@@ -47,8 +47,8 @@ class ArpTable {
     public:
         static ArpTable* getInstance(int updateIntervalMs = 1000, bool repeatedScans = true);
 
-        void start();
-        void stop();
+        void begin();
+        void end();
         void loop();
 
         static bool setIPAddress(Device *device);
