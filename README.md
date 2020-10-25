@@ -4,7 +4,7 @@ The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Libr
 Approximate works with 2.4GHz WiFi networks, but not 5GHz networks, as neither ESP8266 or ESP32 support this technology.
 
 # Examples
-Approximate can interact with devices in proximity (using a Proximate Device Handler) or simply when they are active (using a Active Device Handler). The examples here demonstrate combinations of these.
+Approximate can interact with devices in proximity (using a Proximate Device Handler) or simply when they are active (using a Active Device Handler). The examples [here](examples) demonstrate combinations of these.
 
 Every Approximate sketch requires this essential structure:
 
@@ -24,7 +24,7 @@ void loop() {
 ```
 
 ### When We're Close... using a Proximate Device Handler
-This example identifies WiFi devices in proximity and prints out their [MAC addresses](https://en.wikipedia.org/wiki/MAC_address).
+The [CloseBy example](examples/CloseBy) identifies WiFi devices in proximity and prints out their [MAC addresses](https://en.wikipedia.org/wiki/MAC_address).
 
 ```
 #include <Approximate.h>
@@ -82,7 +82,7 @@ void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = 
 The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `SEND` and (sometimes) `RECEIVE` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value.
 
 ### Find My...  using an Active Device Handler
-Track down a device on your WiFi network using its signal strength (as measured by [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) - the LED flashes faster, the closer it is.
+The [FindMy example](examples/FindMy) demonstrates tracking down a device on your WiFi network using its signal strength (as measured by [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) - the LED flashes faster, the closer it is.
 
 ```
 #include <Approximate.h>
@@ -141,10 +141,13 @@ void addActiveDeviceFilter(int oui);
 The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and renders this as a flashing LED, that speeds up as the distance decreases.
 
 ### Close By MQTT
+The [CloseByMQTT example](examples/CloseByMQTT)...
 
 ### Close By Sonoff
+The [CloseBySonoff example](examples/CloseBySonoff)...
 
 ### Watch Device
+The [WatchDevice example](examples/WatchDevice)...
 
 ## Installation
 
@@ -152,4 +155,4 @@ The callback function delivers both a pointer to a `Device` and a `Approximate::
 
 Alternatively, Approximate can be installed by cloning the GitHub repository (https://github.com/davidchatting/Approximate), then manually copying over the contents to the `./libraries` directory used by the Arduino IDE - into a folder called `./libraries/Approximate`. The `master` branch contains the tagged stable releases, `develop` contains the current development version - pull requests and contributions are welcome.
 
-External Dependencies... Approximate supports the ESP8266 and the ESP32, depending on which is used
+External Dependencies... Approximate supports the ESP8266 and the ESP32, depending on which is used...
