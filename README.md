@@ -145,6 +145,53 @@ void addActiveDeviceFilter(int oui);
 
 The callback function delivers both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and renders this as a flashing LED, that speeds up as the distance decreases.
 
+### Watch Device - using a Proximate Device Handler and an Active Device Handler
+
+![WatchDevice example](./images/approx-example-watchdevice.png)
+
+The [WatchDevice example](examples/WatchDevice) creates a pair with a proximate device and then flashes its LED in proportion to the amount of data being downloaded.
+
+```
+#include <Approximate.h>
+Approximate approx;
+
+const int LED_PIN = 2;
+long ledOnUntilMs = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+
+  if (approx.init("MyHomeWiFi", "password")) {
+    approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI, /*lastSeenTimeoutMs*/ 1000);
+    approx.setActiveDeviceHandler(onActiveDevice, /*inclusive*/ false);
+    approx.begin();
+  }
+}
+
+void loop() {
+  approx.loop();
+  digitalWrite(LED_PIN, millis() < ledOnUntilMs);
+}
+
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
+  switch (event) {
+    case Approximate::ARRIVE:
+      Serial.println("Watching:  " + device -> getMacAddressAsString());
+      approx.setActiveDeviceFilter(device);
+      break;
+    case Approximate::DEPART:
+      break;
+  }
+}
+
+void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
+    if(event == Approximate::RECEIVE) {
+      ledOnUntilMs = millis() + (device -> getPayloadLengthBytes()/10);
+    }
+}
+```
+
 ### Close By MQTT
 
 ![CloseByMQTT example](./images/approx-example-closeby.png)
@@ -156,12 +203,6 @@ The [CloseByMQTT example](examples/CloseByMQTT)...
 ![CloseBySonoff example](./images/approx-example-closebysonoff.png)
 
 The [CloseBySonoff example](examples/CloseBySonoff)...
-
-### Watch Device
-
-![WatchDevice example](./images/approx-example-watchdevice.png)
-
-The [WatchDevice example](examples/WatchDevice)...
 
 ## Installation
 
