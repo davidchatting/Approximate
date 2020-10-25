@@ -58,6 +58,12 @@ String Device::getMacAddressAsString() {
     return(macAddressAsString);
 }
 
+char *Device::getMacAddressAs_c_str(char *out) {
+    Approximate::eth_addr_to_c_str(macAddress, out);
+    
+    return(out);
+}
+
 String Device::getBssidAsString() {
     String bssidAsString = "";
 
@@ -66,8 +72,10 @@ String Device::getBssidAsString() {
     return(bssidAsString);
 }
 
-bool Device::hasIPAddress() {
-    return(ipAddress.addr != IPADDR_ANY);
+char *Device::getBssidAs_c_str(char *out) {
+    Approximate::eth_addr_to_c_str(bssid, out);
+    
+    return(out);
 }
 
 String Device::getIPAddressAsString() {
@@ -78,6 +86,18 @@ String Device::getIPAddressAsString() {
     }
 
     return(ipAddressAsString);
+}
+
+char *Device::getIPAddressAs_c_str(char *out) {
+    if(ipAddress.addr != IPADDR_ANY) {
+        strcpy(out, ip4addr_ntoa(&ipAddress));
+    }
+
+    return(out);
+}
+
+bool Device::hasIPAddress() {
+    return(ipAddress.addr != IPADDR_ANY);
 }
 
 void Device::setRSSI(int rssi) {
@@ -121,6 +141,18 @@ bool Device::isDownloading() {
     return(dataFlowBytes > 0);
 }
 
-int Device::getPayloadLengthBytes(){
+int Device::getDownloadSizeBytes() {
+    int downloadSizeBytes = isDownloading() ? getPayloadSizeBytes() : 0;
+
+    return(downloadSizeBytes);
+}
+
+int Device::getUploadSizeBytes() {
+    int uploadSizeBytes = isUploading() ? getPayloadSizeBytes() : 0;
+
+    return(uploadSizeBytes);
+}
+
+int Device::getPayloadSizeBytes(){
     return(abs(dataFlowBytes));
 }
