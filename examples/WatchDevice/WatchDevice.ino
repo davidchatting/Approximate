@@ -38,7 +38,7 @@ void loop() {
 void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
   switch (event) {
     case Approximate::ARRIVE:
-      Serial.printf("Watching: %s\n", device -> getMacAddressAsString().c_str());
+      Serial.println("Watching:  " + device -> getMacAddressAsString());
       approx.setActiveDeviceFilter(device);
       break;
     case Approximate::DEPART:
