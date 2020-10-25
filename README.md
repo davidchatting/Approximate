@@ -200,7 +200,7 @@ The [CloseByMQTT example](examples/CloseByMQTT)...
 
 ### Close By Sonoff
 
-![CloseBySonoff example](./images/approx-example-closebysonoff.png)
+![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
 
 The [CloseBySonoff example](examples/CloseBySonoff)...
 
