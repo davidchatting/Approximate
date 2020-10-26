@@ -119,7 +119,7 @@ void loop() {
 
   digitalWrite(LED_PIN, ledState);
   
-  if(ledToggleAtMs > 0 && millis() > ledToggleAtMs) {
+  if(ledToggleIntervalMs > 0 && millis() > ledToggleAtMs) {
     ledState = !ledState;
     ledToggleAtMs = millis() + ledToggleIntervalMs;
   }
@@ -168,7 +168,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
 
   if (approx.init("MyHomeWiFi", "password")) {
-    approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI, /*lastSeenTimeoutMs*/ 1000);
+    approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_INTIMATE_RSSI, /*lastSeenTimeoutMs*/ 1000);
     approx.setActiveDeviceHandler(onActiveDevice, /*inclusive*/ false);
     approx.begin();
   }
@@ -192,7 +192,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
     if(event == Approximate::RECEIVE) {
-      ledOnUntilMs = millis() + (device -> getPayloadLengthBytes()/10);
+      ledOnUntilMs = millis() + (device -> getPayloadSizeBytes()/10);
     }
 }
 ```
@@ -220,7 +220,7 @@ void setup() {
 
   if (approx.init("MyHomeWiFi", "password")) {
     approx.setProximateDeviceHandler(onCloseByDevice);
-    approx.start([]() {
+    approx.begin([]() {
       mqttClient.setServer("192.168.XXX.XXX", 1883);
     });
   }

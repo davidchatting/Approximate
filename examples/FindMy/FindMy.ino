@@ -36,7 +36,7 @@ void loop() {
 
   digitalWrite(LED_PIN, ledState);
   
-  if(ledToggleAtMs > 0 && millis() > ledToggleAtMs) {
+  if(ledToggleIntervalMs > 0 && millis() > ledToggleAtMs) {
     ledState = !ledState;
     ledToggleAtMs = millis() + ledToggleIntervalMs;
   }

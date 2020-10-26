@@ -28,7 +28,7 @@ void setup() {
 
   if (approx.init("MyHomeWiFi", "password")) {
     approx.setProximateDeviceHandler(onCloseByDevice);
-    approx.start([]() {
+    approx.begin([]() {
       mqttClient.setServer("192.168.XXX.XXX", 1883);
     });
   }
