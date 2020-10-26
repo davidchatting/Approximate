@@ -25,7 +25,7 @@ void loop() {
 
 ### When We're Close... using a Proximate Device Handler
 
-![CloseBy example](./images/approx-example-closeby.png)
+![CloseBy example](./images/approx-example-closeby.gif)
 
 The [CloseBy example](examples/CloseBy) indicates when a WiFi device is in proximity and prints out its [MAC addresses](https://en.wikipedia.org/wiki/MAC_address).
 
@@ -199,7 +199,7 @@ void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
 
 ### Close By MQTT
 
-![CloseByMQTT example](./images/approx-example-closeby.gif)
+![CloseByMQTT example](./images/approx-example-closebymqtt.gif)
 
 The [CloseByMQTT example](examples/CloseByMQTT)...
 
