@@ -27,14 +27,17 @@ void loop() {
 
 ![CloseBy example](./images/approx-example-closeby.png)
 
-The [CloseBy example](examples/CloseBy) identifies WiFi devices in proximity and prints out their [MAC addresses](https://en.wikipedia.org/wiki/MAC_address).
+The [CloseBy example](examples/CloseBy) indicates when a WiFi device is in proximity and prints out its [MAC addresses](https://en.wikipedia.org/wiki/MAC_address).
 
 ```
 #include <Approximate.h>
 Approximate approx;
 
+const int LED_PIN = 2;
+
 void setup() {
     Serial.begin(9600);
+    pinMode(LED_PIN, OUTPUT);
 
     if (approx.init("MyHomeWiFi", "password")) {
         approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_PERSONAL_RSSI);
@@ -49,9 +52,11 @@ void loop() {
 void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
     switch(event) {
         case Approximate::ARRIVE:
+            digitalWrite(LED_PIN, HIGH);
             Serial.println("ARRIVE\t" + device->getMacAddressAsString());
             break;
         case Approximate::DEPART:
+            digitalWrite(LED_PIN, LOW);
             Serial.println("DEPART\t" + device->getMacAddressAsString());
             break;
     }
@@ -67,7 +72,7 @@ The Proximate Device Handler is set by `setProximateDeviceHandler()`, it takes a
 
 These values are extremely approximate and represent the highest values that might be achieved at these ranges. `rssiThreshold` can be defined numerically and if it is not set `setProximateDeviceHandler()` defaults to a value of `APPROXIMATE_PERSONAL_RSSI`.
 
-The callback function `onCloseByDevice()` receives both a pointer to a `Device` and a `Approximate::DeviceEvent` for each new observation - here the events `Approximate::ARRIVE` and `Approximate::DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out. MAC addresses are the primary way in which the Approximate library identifies network devices.
+The callback function `onCloseByDevice()` receives both a pointer to a `Device` and a `Approximate::DeviceEvent` for each new observation - here the events `Approximate::ARRIVE` and `Approximate::DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out and indicates state via the LED. MAC addresses are the primary way in which the Approximate library identifies network devices.
 
 There are four event types that a `DeviceHandler` will encounter: 
 
