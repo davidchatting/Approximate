@@ -203,6 +203,55 @@ void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
 
 The [CloseByMQTT example](examples/CloseByMQTT)...
 
+```
+#include <Approximate.h>
+#include <PubSubClient.h>        //https://github.com/knolleary/pubsubclient
+
+Approximate approx;
+
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
+
+const int LED_PIN = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+
+  if (approx.init("MyHomeWiFi", "password")) {
+    approx.setProximateDeviceHandler(onCloseByDevice);
+    approx.start([]() {
+      mqttClient.setServer("192.168.XXX.XXX", 1883);
+    });
+  }
+}
+
+void loop() {
+  approx.loop();
+  mqttClient.loop();
+}
+
+void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+  if(event == Approximate::ARRIVE || event == Approximate::DEPART) {
+    digitalWrite(LED_PIN, event == Approximate::ARRIVE);
+
+    String json = "{\"" + device->getMacAddressAsString() + "\":\"" + Approximate::toString(event) + "\"}";
+    Serial.println(json);
+    
+    approx.onceWifiStatus(WL_CONNECTED, [](String payload) {
+      mqttClient.connect(WiFi.macAddress().c_str());
+      mqttClient.publish("closeby", payload.c_str(), false); //false = don't retain message
+      
+      #if defined(ESP8266)
+        delay(20);
+        approx.disconnectWiFi();
+      #endif
+    }, json);
+    approx.connectWiFi();
+  }
+}
+```
+
 ### Close By Sonoff
 
 ![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
