@@ -85,7 +85,7 @@ void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = 
 The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `SEND` and (sometimes) `RECEIVE` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value.
 
 ### Find My...  using an Active Device Handler
-![FindMy example](./images/approx-example-findmy.png)
+![FindMy example](./images/approx-example-findmy.gif)
 
 The [FindMy example](examples/FindMy) demonstrates tracking down a device on your WiFi network using its signal strength (as measured by [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) - the LED flashes faster, the closer it is.
 
@@ -206,8 +206,15 @@ The [CloseBySonoff example](examples/CloseBySonoff)...
 
 ## Installation
 
-<del>The latest stable release of Approximate is available in the Arduino IDE Library Manager. Search for "Approximate". Click install.</del>
+<del>The latest stable release of Approximate is available in the Arduino IDE Library Manager - search for "Approximate". Click install.</del>
 
 Alternatively, Approximate can be installed by cloning the GitHub repository (https://github.com/davidchatting/Approximate), then manually copying over the contents to the `./libraries` directory used by the Arduino IDE - into a folder called `./libraries/Approximate`. The `master` branch contains the tagged stable releases, `develop` contains the current development version - pull requests and contributions are welcome.
 
-External Dependencies... Approximate supports the ESP8266 and the ESP32, depending on which is used...
+Approximate requires that either the Arduino core for the ESP8266 or ESP32 is installed - follow these instructions:
+
+* ESP8266 - https://github.com/esp8266/Arduino#installing-with-boards-manager
+* ESP32 - https://github.com/espressif/arduino-esp32/blob/master/docs/arduino-ide/boards_manager.md
+
+In addition, the following libraries are also required:
+
+* ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
