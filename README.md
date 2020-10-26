@@ -152,7 +152,7 @@ The callback function delivers both a pointer to a `Device` and a `Approximate::
 
 ### Watch Device - using a Proximate Device Handler and an Active Device Handler
 
-![WatchDevice example](./images/approx-example-watchdevice.png)
+![WatchDevice example](./images/approx-example-watchdevice.gif)
 
 The [WatchDevice example](examples/WatchDevice) creates a pair with a proximate device and then flashes its LED in proportion to the amount of data being downloaded.
 
@@ -199,7 +199,7 @@ void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
 
 ### Close By MQTT
 
-![CloseByMQTT example](./images/approx-example-closeby.png)
+![CloseByMQTT example](./images/approx-example-closeby.gif)
 
 The [CloseByMQTT example](examples/CloseByMQTT)...
 
