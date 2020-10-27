@@ -79,7 +79,8 @@ char *Device::getBssidAs_c_str(char *out) {
 }
 
 String Device::getIPAddressAsString() {
-    String ipAddressAsString = "";
+    String ipAddressAsString;
+    ipAddressAsString.reserve(16);
 
     if(ipAddress.addr != IPADDR_ANY) {
         ipAddressAsString = String(ip4addr_ntoa(&ipAddress));
