@@ -114,6 +114,7 @@ class Approximate {
     void end();
 
     void loop();
+    bool isRunning();
 
     //add one more filter
     void addActiveDeviceFilter(String macAddress);

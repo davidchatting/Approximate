@@ -50,6 +50,7 @@ class ArpTable {
         void begin();
         void end();
         void loop();
+        bool isRunning();
 
         static bool setIPAddress(Device *device);
         static bool setIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr);

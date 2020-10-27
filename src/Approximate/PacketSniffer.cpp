@@ -91,6 +91,10 @@ void PacketSniffer::loop() {
   }
 }
 
+bool PacketSniffer::isRunning() {
+  return(running);
+}
+
 void PacketSniffer::init(int channel, bool channelScan) {
   Serial.println("PacketSniffer::init");
 

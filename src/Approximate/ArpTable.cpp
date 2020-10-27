@@ -53,6 +53,10 @@ void ArpTable::loop() {
     }
 }
 
+bool ArpTable::isRunning() {
+  return(running);
+}
+
 void ArpTable::scan() {
     if(WiFi.status() == WL_CONNECTED) {
         Serial.printf("Building ARP table, takes %i seconds...\t", (minUpdateIntervalMs * 256)/1000);

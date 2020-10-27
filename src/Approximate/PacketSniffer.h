@@ -20,6 +20,7 @@ class PacketSniffer {
     void begin();
     void end();
     void loop();
+    bool isRunning();
 
     uint8_t getCurrentChannel();
     void setCurrentChannel(int channel);
