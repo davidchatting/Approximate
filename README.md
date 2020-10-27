@@ -19,7 +19,7 @@ In addition, the following libraries are also required:
 * ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
 
 # Examples
-Every Approximate sketch requires this essential structure:
+Every Approximate sketch has this essential structure:
 
 ```
 #include <Approximate.h>
@@ -36,7 +36,7 @@ void loop() {
 }
 ```
 
-Approximate defines two types of interaction with devices: when in proximity (using a Proximate Device Handler) or simply when they are active (using a Active Device Handler). The examples here demonstrate combinations of these.
+Approximate defines two types of interaction with devices: when in proximity (using a Proximate Device Handler) or simply when active (using an Active Device Handler). The examples here demonstrate combinations of these.
 
 ### When We're Close... using a Proximate Device Handler
 
@@ -280,7 +280,7 @@ In its simplest form `Approximate::onceWifiStatus()` is used as shown below - th
 
 The CloseByMQTT example demonstrates how `Approximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected using `Approximate::disconnectWiFi()` once the MQTT message is sent, to allow monitoring to resume.
 
-### Close By Sonoff
+### Close By Sonoff - interacting with devices
 
 ![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
 
@@ -391,4 +391,4 @@ Significantly this examples requires that not only a proximate device's MAC addr
 
 ## Author
 
-The Approximate library was created by David Chatting [@davidchatting](https://twitter.com/davidchatting) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Contributions welcome, please collaborate by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
+The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Contributions welcome - please collaborate by raising [issues](issues/) and making [pull requests](pulls/) via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
