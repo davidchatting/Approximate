@@ -7,14 +7,14 @@
     MIT License - Copyright (c) October 2020
 */
 
+#include <Approximate.h>
+Approximate approx;
+
 #if defined(ESP8266)
   #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
   #include <HTTPClient.h>
 #endif
-
-#include <Approximate.h>
-Approximate approx;
 
 #include <AceButton.h>
 using namespace ace_button;
@@ -42,7 +42,7 @@ void setup() {
   buttonConfig->setEventHandler(onButtonEvent);
 
   if (approx.init("MyHomeWiFi", "password", true)) {
-    approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_SOCIAL_RSSI, 10000);
+    approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_SOCIAL_RSSI, 10000);
     approx.begin();
   }
 }
@@ -52,7 +52,7 @@ void loop() {
   button.check();
 }
 
-void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
   switch (device->getOUI()) {
     //D8F15B Sonoff (Expressif Inc) - see: http://standards-oui.ieee.org/oui.txt
     case 0xD8F15B:

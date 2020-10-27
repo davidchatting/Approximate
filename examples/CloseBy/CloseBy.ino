@@ -22,7 +22,7 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
 
     if (approx.init("MyHomeWiFi", "password")) {
-        approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_PERSONAL_RSSI);
+        approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI);
         approx.begin();
     }
 }
@@ -31,7 +31,7 @@ void loop() {
     approx.loop();
 }
 
-void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
     switch(event) {
         case Approximate::ARRIVE:
             digitalWrite(LED_PIN, HIGH);

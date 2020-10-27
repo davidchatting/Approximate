@@ -27,7 +27,7 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
 
   if (approx.init("MyHomeWiFi", "password")) {
-    approx.setProximateDeviceHandler(onCloseByDevice);
+    approx.setProximateDeviceHandler(onProximateDevice);
     approx.begin([]() {
       mqttClient.setServer("192.168.XXX.XXX", 1883);
     });
@@ -39,7 +39,7 @@ void loop() {
   mqttClient.loop();
 }
 
-void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
   if(event == Approximate::ARRIVE || event == Approximate::DEPART) {
     digitalWrite(LED_PIN, event == Approximate::ARRIVE);
 
