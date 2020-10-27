@@ -216,7 +216,7 @@ This example uses both a Proximate Device Handler (`onProximateDevice()`) and an
 
 ![CloseByMQTT example](./images/approx-example-closebymqtt.gif)
 
-The [CloseByMQTT example](examples/CloseByMQTT) makes a connection to the cloud when a device is in proximity, sending a message to an (MQTT)[https://en.wikipedia.org/wiki/MQTT] server. It requires the [Arduino Client for MQTT](https://github.com/knolleary/pubsubclient) library - available via the Arduino IDE Library Manager.
+The [CloseByMQTT example](examples/CloseByMQTT) makes a connection to the cloud when a device is in proximity, sending a message to an [MQTT](https://en.wikipedia.org/wiki/MQTT) server. It requires the [Arduino Client for MQTT](https://github.com/knolleary/pubsubclient) library - available via the Arduino IDE Library Manager.
 
 ```
 #include <Approximate.h>
@@ -267,7 +267,9 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-This example is an extension to the CloseBy example and retains the same structure. However, its use of the network for MQTT messages requires that the WiFi status be managed. In `setup()`, when the `Proximate::begin()` function is called, if the connection can be successfully established `WiFi.status()` will achieve a state of `WL_CONNECTED` at which point network calls may be made. However this status change will take some time and happens asynchronously - typically a short delay might be introduced to wait for this event. For this purpose, `Proximate::begin()` takes an optional lambda function called once the connection is established and used here to set the MQTT server details. The ESP8266 must then break this connection to monitor devices and then reconnect to make network calls, unlike the ESP32 which can maintain the connection and monitor devices; the Approximate library provides a mechanism that manages both cases - namely `Proximate::onceWifiStatus()`. Like `Proximate::begin()` takes a lambda function , but it also takes a status on which this behaviour will be triggered. The function will be called at most once, if the WiFi status is immediately available or once this transition is next made. In its simplest form `Proximate::onceWifiStatus()` is used as shown below - the subsequent call to `approx.connectWiFi()` is made to establish the trigger WiFi status - if it is not already available.
+This example is an extension to the CloseBy example and retains the same structure. However, its use of the network for MQTT messages requires that the WiFi status be managed. In `setup()`, when the `Approximate::begin()` function is called, if the connection can be successfully established `WiFi.status()` will achieve a state of `WL_CONNECTED` at which point network calls may be made. However this status change will take some time and happens asynchronously - typically a short delay might be introduced to wait for this event. For this purpose, `Approximate::begin()` takes an optional lambda function called once the connection is established and used here to set the MQTT server details. The ESP8266 must then break this connection to monitor devices and then reconnect to make network calls, unlike the ESP32 which can maintain the connection and monitor devices; the Approximate library provides a mechanism that manages both cases - namely `Approximate::onceWifiStatus()`. Like `Approximate::begin()` takes a lambda function , but it also takes a status on which this behaviour will be triggered. The function will be called at most once, if the WiFi status is immediately available or once this transition is next made.
+
+In its simplest form `Approximate::onceWifiStatus()` is used as shown below - the subsequent call to `approx.connectWiFi()` is made to establish the trigger WiFi status - if it is not already available.
 
 ```
   approx.onceWifiStatus(WL_CONNECTED, []() {
@@ -276,13 +278,13 @@ This example is an extension to the CloseBy example and retains the same structu
   approx.connectWiFi();
 ```
 
-The CloseByMQTT example demonstrates how `Proximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected using `Proximate::disconnectWiFi()` to allow monitoring to resume once the MQTT message is sent.
+The CloseByMQTT example demonstrates how `Approximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected using `Approximate::disconnectWiFi()` once the MQTT message is sent, to allow monitoring to resume.
 
 ### Close By Sonoff
 
 ![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
 
-The [CloseBySonoff example](examples/CloseBySonoff)... It requires the [AceButton](https://github.com/bxparks/AceButton) library - available via the Arduino IDE Library Manager.
+The [CloseBySonoff example](examples/CloseBySonoff) demonstrates an interaction with a proximate device - namely the [Sonoff BASICR3](https://sonoff.tech/product/wifi-diy-smart-switches/basicr3) smart switch. In [DIY Mode](http://developers.sonoff.tech/sonoff-diy-mode-api-protocol.html) these devices offer a simple RESTful API, enabling the state of the socket to be set via an HTTP POST and json formatted payload. This example requires the [AceButton](https://github.com/bxparks/AceButton) library - available via the Arduino IDE Library Manager.
 
 ```
 #include <Approximate.h>
@@ -383,6 +385,10 @@ void switchCloseBySonoff(bool switchState) {
 }
 ```
 
-This is a further extension to the CloseBy example and again retains the same structure.
+This is a further extension to the CloseBy example and again retains the same structure. It uses a simple Proximate Device Handler (`onProximateDevice()`) and attempts to determine the type of the proximate device by its [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier). Those identifying as `0xD8F15B` are manufactured by Expressif Inc, used by Sonoff (see http://standards-oui.ieee.org/oui.txt) - `onCloseBySonoff()` is then called. If the button is pressed and released `switchCloseBySonoff()` will be called to first turn on and then off a proximate Sonoff socket. The LED is illuminated to show that a device is present.
 
-  if (approx.init("MyHomeWiFi", "password", true)) {
+Significantly this examples requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called - this will caused a delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32. The ESP32 will periodically refresh this, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
+
+## Author
+
+The Approximate library was created by David Chatting [@davidchatting](https://twitter.com/davidchatting) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Contributions welcome, please collaborate by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
