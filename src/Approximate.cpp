@@ -172,9 +172,13 @@ void Approximate::end() {
 
 void Approximate::loop() {
   if(running) {
-    if (packetSniffer)  packetSniffer -> loop();
+    if (packetSniffer)  {
+      packetSniffer -> loop();
+    }
+
     if (arpTable)       arpTable -> loop();
-    updateProximateDeviceList();
+
+    updateProximateDeviceList(); 
   }
 
   if(currentWifiStatus != WiFi.status()) {
@@ -183,6 +187,10 @@ void Approximate::loop() {
     currentWifiStatus = WiFi.status();
     onWifiStatusChange(lastWifiStatus, currentWifiStatus);
   }
+}
+
+bool Approximate::isRunning() {
+  return(running);
 }
 
 void Approximate::onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus) {
@@ -440,18 +448,21 @@ void Approximate::onProximateDevice(Device *d) {
 }
 
 void Approximate::updateProximateDeviceList() {
-  Device *proximateDevice = NULL;
-  for (int n = 0; n < proximateDeviceList.Count(); n++) {
-    proximateDevice = proximateDeviceList[n];
+  if(packetSniffer && packetSniffer -> isRunning()) {
+    //only update if we have the possibility of new observations
+    Device *proximateDevice = NULL;
+    for (int n = 0; n < proximateDeviceList.Count(); n++) {
+      proximateDevice = proximateDeviceList[n];
 
-		if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
-      proximateDeviceHandler(proximateDevice, Approximate::DEPART);
+      if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
+        proximateDeviceHandler(proximateDevice, Approximate::DEPART);
 
-      proximateDeviceList.Remove(n);
-      n=0;
-      delete proximateDevice;
+        proximateDeviceList.Remove(n);
+        n=0;
+        delete proximateDevice;
+      }
     }
-	}
+  }
 }
 
 bool Approximate::isProximateDevice(String macAddress) {
