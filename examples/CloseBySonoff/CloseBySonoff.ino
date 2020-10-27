@@ -7,14 +7,14 @@
     MIT License - Copyright (c) October 2020
 */
 
+#include <Approximate.h>
+Approximate approx;
+
 #if defined(ESP8266)
   #include <ESP8266HTTPClient.h>
 #elif defined(ESP32)
   #include <HTTPClient.h>
 #endif
-
-#include <Approximate.h>
-Approximate approx;
 
 #include <AceButton.h>
 using namespace ace_button;
@@ -42,8 +42,8 @@ void setup() {
   buttonConfig->setEventHandler(onButtonEvent);
 
   if (approx.init("MyHomeWiFi", "password", true)) {
-    approx.setProximateDeviceHandler(onCloseByDevice, APPROXIMATE_SOCIAL_RSSI, 5000);
-    approx.start();
+    approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_SOCIAL_RSSI, 10000);
+    approx.begin();
   }
 }
 
@@ -52,7 +52,7 @@ void loop() {
   button.check();
 }
 
-void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
   switch (device->getOUI()) {
     //D8F15B Sonoff (Expressif Inc) - see: http://standards-oui.ieee.org/oui.txt
     case 0xD8F15B:
@@ -97,24 +97,27 @@ void onButtonEvent(AceButton* button, uint8_t eventType, uint8_t buttonState) {
 }
 
 void switchCloseBySonoff(bool switchState) {
-  approx.onceWifiStatus(WL_CONNECTED, [](bool switchState) {
-    HTTPClient http;
-
-    String url = "http://" + closeBySonoff->getIPAddressAsString() + ":8081/zeroconf/switch";
-    http.begin(url);
-    http.addHeader("Content-Type", "application/json");
-  
-    String switchValue = switchState?"on":"off";
-    String httpRequestData = "{\"deviceid\": \"\",\"data\": {\"switch\": \"" + switchValue + "\"}}";
-    
-    int httpResponseCode = http.POST(httpRequestData);
-    Serial.printf("%s\t%s\t%i\n",url.c_str(), httpRequestData.c_str(), httpResponseCode);
-    http.end();
-    
-    #if defined(ESP8266)
-      delay(20);
-      approx.disconnectWiFi();
-    #endif
-  }, switchState);
-  approx.connectWiFi();
+  if(closeBySonoff) {
+    approx.onceWifiStatus(WL_CONNECTED, [](bool switchState) {
+      if(closeBySonoff) {
+        HTTPClient http;
+        String url = "http://" + closeBySonoff->getIPAddressAsString() + ":8081/zeroconf/switch";
+        http.begin(url);
+        http.addHeader("Content-Type", "application/json");
+      
+        String switchValue = switchState?"on":"off";
+        String httpRequestData = "{\"deviceid\": \"\",\"data\": {\"switch\": \"" + switchValue + "\"}}";
+        
+        int httpResponseCode = http.POST(httpRequestData);
+        Serial.printf("%s\t%s\t%i\n",url.c_str(), httpRequestData.c_str(), httpResponseCode);
+        http.end();
+      }
+      
+      #if defined(ESP8266)
+        delay(20);
+        approx.disconnectWiFi();
+      #endif
+    }, switchState);
+    approx.connectWiFi();
+  }
 }

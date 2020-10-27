@@ -15,12 +15,20 @@ Approximate approx;
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
+//Define for your board, not all have built-in LED and/or button:
+#if defined(ESP8266)
+  const int LED_PIN = 14;
+#elif defined(ESP32)
+  const int LED_PIN = 2;
+#endif
+
 void setup() {
   Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
 
   if (approx.init("MyHomeWiFi", "password")) {
-    approx.setProximateDeviceHandler(onCloseByDevice);
-    approx.start([]() {
+    approx.setProximateDeviceHandler(onProximateDevice);
+    approx.begin([]() {
       mqttClient.setServer("192.168.XXX.XXX", 1883);
     });
   }
@@ -31,8 +39,10 @@ void loop() {
   mqttClient.loop();
 }
 
-void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
   if(event == Approximate::ARRIVE || event == Approximate::DEPART) {
+    digitalWrite(LED_PIN, event == Approximate::ARRIVE);
+
     String json = "{\"" + device->getMacAddressAsString() + "\":\"" + Approximate::toString(event) + "\"}";
     Serial.println(json);
     

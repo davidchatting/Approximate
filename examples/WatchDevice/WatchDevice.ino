@@ -26,7 +26,7 @@ void setup() {
   if (approx.init("MyHomeWiFi", "password")) {
     approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI, /*lastSeenTimeoutMs*/ 1000);
     approx.setActiveDeviceHandler(onActiveDevice, /*inclusive*/ false);
-    approx.start();
+    approx.begin();
   }
 }
 
@@ -38,7 +38,7 @@ void loop() {
 void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
   switch (event) {
     case Approximate::ARRIVE:
-      Serial.printf("Watching: %s\n", device -> getMacAddressAsString().c_str());
+      Serial.println("Watching:  " + device -> getMacAddressAsString());
       approx.setActiveDeviceFilter(device);
       break;
     case Approximate::DEPART:
@@ -47,7 +47,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
-    if(event == Approximate::DOWNLOAD) {
+    if(event == Approximate::RECEIVE) {
       ledOnUntilMs = millis() + (device -> getPayloadLengthBytes()/10);
     }
 }

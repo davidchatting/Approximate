@@ -10,12 +10,20 @@
 #include <Approximate.h>
 Approximate approx;
 
+//Define for your board, not all have built-in LED and/or button:
+#if defined(ESP8266)
+  const int LED_PIN = 14;
+#elif defined(ESP32)
+  const int LED_PIN = 2;
+#endif
+
 void setup() {
     Serial.begin(9600);
+    pinMode(LED_PIN, OUTPUT);
 
     if (approx.init("MyHomeWiFi", "password")) {
-        approx.setProximateDeviceHandler(onCloseByDevice);
-        approx.start();
+        approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI);
+        approx.begin();
     }
 }
 
@@ -23,9 +31,15 @@ void loop() {
     approx.loop();
 }
 
-void onCloseByDevice(Device *device, Approximate::DeviceEvent event) {
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
     switch(event) {
-        case Approximate::ARRIVE:   Serial.println("ARRIVE\t" + device->getMacAddressAsString());    break;
-        case Approximate::DEPART:   Serial.println("DEPART\t" + device->getMacAddressAsString());    break;
+        case Approximate::ARRIVE:
+            digitalWrite(LED_PIN, HIGH);
+            Serial.println("ARRIVE\t" + device->getMacAddressAsString());
+            break;
+        case Approximate::DEPART:
+            digitalWrite(LED_PIN, LOW);
+            Serial.println("DEPART\t" + device->getMacAddressAsString());
+            break;
     }
 }

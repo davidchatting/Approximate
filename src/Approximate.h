@@ -21,10 +21,10 @@
 
 #include "ListLib.h"              //https://github.com/luisllamasbinaburo/Arduino-List
 
-#define APPROXIMATE_INTIMATE_RSSI -15
-#define APPROXIMATE_PERSONAL_RSSI -30
+#define APPROXIMATE_INTIMATE_RSSI -20
+#define APPROXIMATE_PERSONAL_RSSI -40
 #define APPROXIMATE_SOCIAL_RSSI -60
-#define APPROXIMATE_PUBLIC_RSSI -120  //TODO: interaction with min RSSI in PacketSniffer
+#define APPROXIMATE_PUBLIC_RSSI -80  //TODO: interaction with min RSSI in PacketSniffer
 
 class Approximate {
   public:
@@ -36,10 +36,10 @@ class Approximate {
     } PacketType;
 
     typedef enum {
-      UPLOAD,
-      DOWNLOAD,
       ARRIVE,
       DEPART,
+      SEND,
+      RECEIVE,
       INACTIVE
     } DeviceEvent;
 
@@ -47,8 +47,8 @@ class Approximate {
 
     static String toString(DeviceEvent e) {
       switch (e) {
-        case Approximate::UPLOAD:     return("UPLOAD");
-        case Approximate::DOWNLOAD:   return("DOWNLOAD");
+        case Approximate::SEND:       return("SEND");
+        case Approximate::RECEIVE:    return("RECEIVE");
         case Approximate::ARRIVE:     return("ARRIVE");
         case Approximate::DEPART:     return("DEPART");
         default:                      return("INACTIVE");
@@ -60,12 +60,12 @@ class Approximate {
 
     static PacketSniffer *packetSniffer;
     static ArpTable *arpTable;
-    static bool proximateIPAddressRequired;
 
     String ssid;
     String password;
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
+    bool init(int channel, uint8_t *bssid, bool ipAddressResolution);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
 
     //TODO: template this?
@@ -107,26 +107,28 @@ class Approximate {
 
   public:
     Approximate();
+    bool init(bool ipAddressResolution = false);
     bool init(String ssid, String password = "", bool ipAddressResolution = false);
 
-    void start(voidFnPtr thenFnPtr = NULL);
-    void stop();
+    void begin(voidFnPtr thenFnPtr = NULL);
+    void end();
 
     void loop();
+    bool isRunning();
 
     //add one more filter
-    void addActiveDeviceFilter(String macAddress, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(Device &device, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(Device *device, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction = Filter::EITHER);
-    void addActiveDeviceFilter(int oui, Filter::Direction direction = Filter::EITHER);
+    void addActiveDeviceFilter(String macAddress);
+    void addActiveDeviceFilter(Device &device);
+    void addActiveDeviceFilter(Device *device);
+    void addActiveDeviceFilter(eth_addr &macAddress);
+    void addActiveDeviceFilter(int oui);
 
     //set exactly one filter
-    void setActiveDeviceFilter(String macAddress, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(Device &device, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(Device *device, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction = Filter::EITHER);
-    void setActiveDeviceFilter(int oui, Filter::Direction direction = Filter::EITHER);
+    void setActiveDeviceFilter(String macAddress);
+    void setActiveDeviceFilter(Device &device);
+    void setActiveDeviceFilter(Device *device);
+    void setActiveDeviceFilter(eth_addr &macAddress);
+    void setActiveDeviceFilter(int oui);
 
     void removeActiveDeviceFilter(String macAddress);
     void removeActiveDeviceFilter(Device &device);
@@ -142,7 +144,7 @@ class Approximate {
     bool isProximateDevice(eth_addr &macAddress);
 
     void setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive = true);
-    void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000, bool requireIPAddress = false);
+    void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
 
     static void setProximateRSSIThreshold(int proximateRSSIThreshold);
     static void setProximateLastSeenTimeoutMs(int proximateLastSeenTimeoutMs);
@@ -161,6 +163,7 @@ class Approximate {
     static bool oui_to_eth_addr(int oui, eth_addr &out);
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
+    static bool eth_addr_to_c_str(eth_addr &in, char *out);
     static bool wifi_pkt_to_Packet(wifi_promiscuous_pkt_t *in, uint16_t payloadLengthBytes, Packet *out);
     static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
 };

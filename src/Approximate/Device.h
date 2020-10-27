@@ -37,8 +37,11 @@ class Device {
         void update(Device *d);
 
         String getMacAddressAsString();
+        char *getMacAddressAs_c_str(char *out);
         String getBssidAsString();
+        char *getBssidAs_c_str(char *out);
         String getIPAddressAsString();
+        char *getIPAddressAs_c_str(char *out);
         bool hasIPAddress();
 
         void setRSSI(int rssi);
@@ -55,7 +58,10 @@ class Device {
 
         bool isUploading();
         bool isDownloading();
-        int getPayloadLengthBytes();
+
+        int getUploadSizeBytes();
+        int getDownloadSizeBytes();
+        int getPayloadSizeBytes();
 };
 
 #endif

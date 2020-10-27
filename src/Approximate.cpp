@@ -12,7 +12,6 @@ bool Approximate::running = false;
 
 PacketSniffer *Approximate::packetSniffer = PacketSniffer::getInstance();
 ArpTable *Approximate::arpTable = NULL;
-bool Approximate::proximateIPAddressRequired = false;
 
 Approximate::DeviceHandler Approximate::activeDeviceHandler = NULL;
 Approximate::DeviceHandler Approximate::proximateDeviceHandler = NULL;
@@ -27,37 +26,63 @@ int Approximate::proximateLastSeenTimeoutMs = 60000;
 Approximate::Approximate() {
 }
 
-bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
-  WiFi.mode(WIFI_STA);
-  WiFi.disconnect();
-  delay(100);
+bool Approximate::init(bool ipAddressResolution) {
+  bool success = false;
 
-  bool networkFound = false;
+  if(WiFi.status() == WL_CONNECTED) {
+    this->ssid = WiFi.SSID();
+    this->password = WiFi.psk();
+
+    if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution)) {
+      success = true;
+    }
+  }
+
+  return(success);
+}
+
+bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
+  bool success = false;
+
   int n = WiFi.scanNetworks();
-  for (int i = 0; i < n && !networkFound; ++i) {
+  for (int i = 0; i < n && !success; ++i) {
     if(WiFi.SSID(i) == ssid) {
       if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
         //Network is either open or a password is supplied
-        Serial.printf("\n-\nNetwork: %s\t\tRouter: %s\t\tChannel: %i\n-\n", ssid.c_str(), WiFi.BSSIDstr(i).c_str(), WiFi.channel(i));
-
-        packetSniffer -> init(WiFi.channel(i));
-        packetSniffer -> setPacketEventHandler(packetEventHandler);
-
-        if(ipAddressResolution) arpTable = ArpTable::getInstance();
-
-        eth_addr networkBSSID; 
-        uint8_t_to_eth_addr(WiFi.BSSID(i), networkBSSID);
-        setLocalBSSID(networkBSSID);
-
         this->ssid = ssid;
         this->password = password;
 
-        networkFound = true;
+        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution)) {
+          success = true;
+        }
       }
     }
   }
 
-  return(networkFound);
+  return(success);
+}
+
+bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution) {
+  bool success = true;
+
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+
+  packetSniffer -> init(channel);
+  packetSniffer -> setPacketEventHandler(packetEventHandler);
+
+  eth_addr networkBSSID; 
+  uint8_t_to_eth_addr(bssid, networkBSSID);
+  setLocalBSSID(networkBSSID);
+
+  String networkBSSIDAsString;
+  eth_addr_to_String(networkBSSID, networkBSSIDAsString);
+  Serial.printf("\n-\nRouter: %s\t\tChannel: %i\n-\n", networkBSSIDAsString.c_str(), channel);
+
+  if(ipAddressResolution) arpTable = ArpTable::getInstance();
+
+  return(success);
 }
 
 void Approximate::onceWifiStatus(wl_status_t status, voidFnPtr callBackFnPtr) {
@@ -115,15 +140,15 @@ void Approximate::onceWifiStatus(wl_status_t status, voidFnPtrWithFnPtrPayload c
   }
 }
 
-void Approximate::start(voidFnPtr thenFnPtr) {
-  Serial.println("Approximate::start");
+void Approximate::begin(voidFnPtr thenFnPtr) {
+  Serial.println("Approximate::begin");
 
   onceWifiStatus(WL_CONNECTED, [](voidFnPtr thenFnPtr) {
     if(thenFnPtr) thenFnPtr();
 
     if(arpTable) {
       arpTable -> scan(); //blocking
-      arpTable -> start();
+      arpTable -> begin();
     }
 
     #if defined(ESP8266)
@@ -131,25 +156,29 @@ void Approximate::start(voidFnPtr thenFnPtr) {
     #endif
 
     //start the packetSniffer after the scan is complete:
-    if(packetSniffer)  packetSniffer -> start();
+    if(packetSniffer)  packetSniffer -> begin();
 
     running = true;
   }, thenFnPtr);
   connectWiFi();
 }
 
-void Approximate::stop() {
-  if (packetSniffer)  packetSniffer -> stop();
-  if (arpTable)       arpTable -> stop();
+void Approximate::end() {
+  if (packetSniffer)  packetSniffer -> end();
+  if (arpTable)       arpTable -> end();
 
   running = false;
 }
 
 void Approximate::loop() {
   if(running) {
-    if (packetSniffer)  packetSniffer -> loop();
+    if (packetSniffer)  {
+      packetSniffer -> loop();
+    }
+
     if (arpTable)       arpTable -> loop();
-    updateProximateDeviceList();
+
+    updateProximateDeviceList(); 
   }
 
   if(currentWifiStatus != WiFi.status()) {
@@ -158,6 +187,10 @@ void Approximate::loop() {
     currentWifiStatus = WiFi.status();
     onWifiStatusChange(lastWifiStatus, currentWifiStatus);
   }
+}
+
+bool Approximate::isRunning() {
+  return(running);
 }
 
 void Approximate::onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus) {
@@ -190,7 +223,7 @@ void Approximate::connectWiFi(String ssid, String password) {
   if(WiFi.status() != WL_CONNECTED) {
     if(ssid.length() > 0) {
       #if defined(ESP8266)
-        if (packetSniffer)  packetSniffer -> stop();
+        if (packetSniffer)  packetSniffer -> end();
       #endif
 
       Serial.printf("Approximate::connectWiFi %s %s\n", ssid.c_str(), password.c_str());
@@ -203,7 +236,7 @@ void Approximate::disconnectWiFi() {
   WiFi.disconnect();
 
   #if defined(ESP8266)
-    if (running && packetSniffer)  packetSniffer -> start();
+    if (running && packetSniffer)  packetSniffer -> begin();
   #endif
 }
 
@@ -220,56 +253,56 @@ void Approximate::printWiFiStatus() {
   }
 }
 
-void Approximate::addActiveDeviceFilter(String macAddress, Filter::Direction direction) {
+void Approximate::addActiveDeviceFilter(String macAddress) {
   eth_addr macAddress_eth_addr;
   String_to_eth_addr(macAddress, macAddress_eth_addr);
 
-  addActiveDeviceFilter(macAddress_eth_addr, direction);
+  addActiveDeviceFilter(macAddress_eth_addr);
 }
 
-void Approximate::addActiveDeviceFilter(Device &device, Filter::Direction direction) {
-  addActiveDeviceFilter(device.macAddress, direction);
+void Approximate::addActiveDeviceFilter(Device &device) {
+  addActiveDeviceFilter(device.macAddress);
 }
 
-void Approximate::addActiveDeviceFilter(Device *device, Filter::Direction direction) {
-  addActiveDeviceFilter(device -> macAddress, direction);
+void Approximate::addActiveDeviceFilter(Device *device) {
+  addActiveDeviceFilter(device -> macAddress);
 }
 
-void Approximate::addActiveDeviceFilter(int oui, Filter::Direction direction) {
+void Approximate::addActiveDeviceFilter(int oui) {
   eth_addr macAddress;
   oui_to_eth_addr(oui, macAddress);
 
-  addActiveDeviceFilter(macAddress, direction);
+  addActiveDeviceFilter(macAddress);
 }
 
-void Approximate::addActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction) {
-  Filter *f = new Filter(macAddress, direction);
+void Approximate::addActiveDeviceFilter(eth_addr &macAddress) {
+  Filter *f = new Filter(macAddress);
   activeDeviceFilterList.Add(f);
 }
 
-void Approximate::setActiveDeviceFilter(String macAddress, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(String macAddress) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(macAddress, direction);
+  addActiveDeviceFilter(macAddress);
 }
 
-void Approximate::setActiveDeviceFilter(Device &device, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(Device &device) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(device, direction);
+  addActiveDeviceFilter(device);
 }
 
-void Approximate::setActiveDeviceFilter(Device *device, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(Device *device) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(device, direction);
+  addActiveDeviceFilter(device);
 }
 
-void Approximate::setActiveDeviceFilter(eth_addr &macAddress, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(eth_addr &macAddress) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(macAddress, direction);
+  addActiveDeviceFilter(macAddress);
 }
 
-void Approximate::setActiveDeviceFilter(int oui, Filter::Direction direction) {
+void Approximate::setActiveDeviceFilter(int oui) {
   removeAllActiveDeviceFilters();
-  addActiveDeviceFilter(oui, direction);
+  addActiveDeviceFilter(oui);
 }
 
 void Approximate::removeActiveDeviceFilter(String macAddress) {
@@ -343,10 +376,9 @@ void Approximate::setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool
   Approximate::activeDeviceHandler = activeDeviceHandler;
 }
 
-void Approximate::setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold, int lastSeenTimeoutMs, bool requireIPAddress) {
+void Approximate::setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold, int lastSeenTimeoutMs) {
   setProximateRSSIThreshold(rssiThreshold);
   setProximateLastSeenTimeoutMs(lastSeenTimeoutMs);
-  proximateIPAddressRequired = requireIPAddress;
   Approximate::proximateDeviceHandler = deviceHandler;
 }
 
@@ -383,7 +415,7 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
       }
 
       if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
-        DeviceEvent event = device -> isUploading() ? Approximate::UPLOAD : Approximate::DOWNLOAD;
+        DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
         activeDeviceHandler(device, event); 
       }
     }
@@ -402,36 +434,35 @@ void Approximate::onProximateDevice(Device *d) {
     if(proximateDevice) {
       proximateDevice->update(d);
 
-      if(activeDeviceHandler && (!proximateIPAddressRequired || proximateDevice -> hasIPAddress())) {
-        DeviceEvent event = proximateDevice -> isUploading() ? Approximate::UPLOAD : Approximate::DOWNLOAD;
+      if(activeDeviceHandler) {
+        DeviceEvent event = proximateDevice -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
         activeDeviceHandler(proximateDevice, event);
       }
     }
     else {
       proximateDevice = new Device(d);
-
-      if(!proximateIPAddressRequired || proximateDevice -> hasIPAddress()) {
-        proximateDeviceList.Add(proximateDevice);
-        proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
-      }
-      else delete proximateDevice;
+      proximateDeviceList.Add(proximateDevice);
+      proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
     }
   }
 }
 
 void Approximate::updateProximateDeviceList() {
-  Device *proximateDevice = NULL;
-  for (int n = 0; n < proximateDeviceList.Count(); n++) {
-    proximateDevice = proximateDeviceList[n];
+  if(packetSniffer && packetSniffer -> isRunning()) {
+    //only update if we have the possibility of new observations
+    Device *proximateDevice = NULL;
+    for (int n = 0; n < proximateDeviceList.Count(); n++) {
+      proximateDevice = proximateDeviceList[n];
 
-		if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
-      proximateDeviceHandler(proximateDevice, Approximate::DEPART);
+      if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
+        proximateDeviceHandler(proximateDevice, Approximate::DEPART);
 
-      proximateDeviceList.Remove(n);
-      n=0;
-      delete proximateDevice;
+        proximateDeviceList.Remove(n);
+        n=0;
+        delete proximateDevice;
+      }
     }
-	}
+  }
 }
 
 bool Approximate::isProximateDevice(String macAddress) {
@@ -514,8 +545,16 @@ bool Approximate::eth_addr_to_String(eth_addr &in, String &out) {
   bool success = true;
 
   char macAddressAsCharArray[18];
-  sprintf(macAddressAsCharArray, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
+  eth_addr_to_c_str(in, macAddressAsCharArray);
   out = String(macAddressAsCharArray);
+
+  return(success);
+}
+
+bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
+  bool success = true;
+
+  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
 
   return(success);
 }
