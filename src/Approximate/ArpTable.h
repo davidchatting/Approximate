@@ -52,8 +52,8 @@ class ArpTable {
         void loop();
         bool isRunning();
 
-        static bool setIPAddress(Device *device);
-        static bool setIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr);
+        static bool lookupIPAddress(Device *device);
+        static bool lookupIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr);
 
         static void scan();
 };
