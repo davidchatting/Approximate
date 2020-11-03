@@ -1,7 +1,7 @@
 # The Approximate Library
 The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions between your Internet of Things and the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32).
 
-Approximate works with 2.4GHz WiFi networks, but not 5GHz networks, as neither ESP8266 or ESP32 support this technology.
+Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology.
 
 ## Installation
 
@@ -18,7 +18,7 @@ In addition, the following libraries are also required:
 
 * ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
 
-# Examples
+## Examples
 Every Approximate sketch has this essential structure:
 
 ```
@@ -78,7 +78,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-This example uses a Proximate Device Handler. The `onProximateDevice()` callback function receives both a pointer to a `Device` and a `Approximate::DeviceEvent` for each new observation - in this example the events `Approximate::ARRIVE` and `Approximate::DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out and the state indicated via the LED. MAC addresses are the primary way in which the Approximate library identifies network devices.
+This example uses a Proximate Device Handler. The `onProximateDevice()` callback function receives both a pointer to a `Device` and a `DeviceEvent` for each new observation - in this example the events `ARRIVE` and `DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out and the state indicated via the LED. MAC addresses are the primary way in which the Approximate library identifies network devices.
 
 There are four event types that a `DeviceHandler` will encounter: 
 
@@ -87,7 +87,7 @@ There are four event types that a `DeviceHandler` will encounter:
 * `Approximate::SEND` every time the device sends (uploads) data
 * `Approximate::RECEIVE` every time the device receives (downloads) data (rarely for Proximate Device Handlers, unless the router is also in proximity)
 
-The Proximate Device Handler and is set by `setProximateDeviceHandler()`, which takes a `DeviceHandler` callback function parameter (here `onProximateDevice`) and a value for the `rssiThreshold` parameter that describes range considered to be in proximity (here `APPROXIMATE_PERSONAL_RSSI`). [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication) is a measure of WiFi signal strength used to estimate proximity. It is measured in [dBm](https://en.wikipedia.org/wiki/DBm) and at close proximity (where the reception is good) its value will approach zero, as the signal degrades over distance and through objects and walls, the value will fall - an RSSI of -50 would represent a relatively strong signal. The library predefines four values of `rssiThreshold` for use, that borrow from the language of [proxemics](https://en.wikipedia.org/wiki/Proxemics):
+The Proximate Device Handler and is set by `setProximateDeviceHandler()`, which takes a `DeviceHandler` callback function parameter (here `onProximateDevice`) and a value for the `rssiThreshold` parameter that describes range considered to be in proximity (here `APPROXIMATE_PERSONAL_RSSI`). [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication) is a measure of WiFi signal strength used to estimate proximity. It is measured in [dBm](https://en.wikipedia.org/wiki/DBm) and at close proximity (where the reception is good) its value will approach zero, as the signal degrades over distance and through objects and walls, the value will fall. For instance, an RSSI of -50 would represent a relatively strong signal. The library predefines four values of `rssiThreshold` for use, that borrow from the language of [proxemics](https://en.wikipedia.org/wiki/Proxemics):
 
 * `APPROXIMATE_INTIMATE_RSSI` -20 dBm (10 centimetres)
 * `APPROXIMATE_PERSONAL_RSSI` -40 dBm (1 metre)
@@ -100,7 +100,7 @@ These values are extremely approximate and represent the highest values that mig
 void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
 ```
 
-The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `SEND` and (sometimes) `RECEIVE` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value.
+The parameter `lastSeenTimeoutMs` defines how quickly (in milliseconds) a device will be said to `DEPART` if it is unseen. While the `ARRIVE` event is triggered only once for a device, further observations will cause `SEND` and (sometimes) `RECEIVE` events; when these events stop and after a wait of `lastSeenTimeoutMs`, a `DEPART` event will then be generated. A suitable value will depend on the dynamics of the application and devices' use of the network. One minute (60,000 ms) is the default value - that is used in this example.
 
 ### Find My...  using an Active Device Handler
 ![FindMy example](./images/approx-example-findmy.gif)
@@ -145,9 +145,9 @@ void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-This example uses an Active Device Handler. The `onActiveDevice()` callback function receives both a pointer to a `Device` and a `Approximate::DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and renders this as a flashing LED, that speeds up as the distance decreases.
+This example uses an Active Device Handler. The `onActiveDevice()` callback function receives both a pointer to a `Device` and a `DeviceEvent` for each event. This example measures the RSSI of messages sent by the device (`event == Approximate::SEND`) to estimate its distance and displays this as a flashing LED, that speeds up as the distance decreases.
 
-The Active Device Handler is set by `Approximate::setActiveDeviceHandler()`, taking a `DeviceHandler` callback function parameter (here `onActiveDevice`), then generating `Approximate::SEND` and `Approximate::RECEIVE` events for active devices. The full definition for `setActiveDeviceHandler()` is:
+The Active Device Handler is set by `Approximate::setActiveDeviceHandler()`, taking a `DeviceHandler` callback function parameter (here `onActiveDevice`), then generating `SEND` and `RECEIVE` events for active devices. The full definition for `setActiveDeviceHandler()` is:
 
 ```
 void setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive = true);
@@ -387,8 +387,8 @@ void switchCloseBySonoff(bool switchState) {
 
 This is a further extension to the CloseBy example and again retains the same structure. It uses a simple Proximate Device Handler (`onProximateDevice()`) and attempts to determine the type of the proximate device by its [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier). Those identifying as `0xD8F15B` are manufactured by Expressif Inc, used by Sonoff (see http://standards-oui.ieee.org/oui.txt) - `onCloseBySonoff()` is then called. If the button is pressed and released `switchCloseBySonoff()` will be called to first turn on and then off a proximate Sonoff socket. The LED is illuminated to show that a device is present.
 
-Significantly this examples requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called - this will caused a delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32. The ESP32 will periodically refresh this, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
+Significantly this example requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled by setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called - but will caused a delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32. The ESP32 will periodically refresh its ARP table, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
 
 ## Author
 
-The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Contributions welcome - please collaborate by raising [issues](issues/) and making [pull requests](pulls/) via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
+The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Collaboration welcome - please contributions by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
