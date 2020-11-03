@@ -102,15 +102,24 @@ bool ArpTable::find(ip4_addr_t &ipaddr, bool requestIfNotFound) {
     return(found);
 }
 
-bool ArpTable::setIPAddress(Device *device) {
+bool ArpTable::lookupIPAddress(Device *device) {
+    bool success = false;
+
     if(device) {
-        return(setIPAddress(device->macAddress, device->ipAddress));
+        eth_addr macAddress;
+        device -> getMacAddress(macAddress);
+
+        ip4_addr_t ipAddress;
+        if(lookupIPAddress(macAddress, ipAddress)) {
+            device -> setIPAddress(ipAddress);
+            success = true;
+        }
     }
     
-    return(false);
+    return(success);
 }
 
-bool ArpTable::setIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr) {
+bool ArpTable::lookupIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr) {
     bool found = false;
 
     uint32_t hash = getHash(macAddress);

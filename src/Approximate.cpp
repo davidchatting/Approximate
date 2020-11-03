@@ -261,11 +261,17 @@ void Approximate::addActiveDeviceFilter(String macAddress) {
 }
 
 void Approximate::addActiveDeviceFilter(Device &device) {
-  addActiveDeviceFilter(device.macAddress);
+  eth_addr macAddress;
+  device.getMacAddress(macAddress);
+
+  addActiveDeviceFilter(macAddress);
 }
 
 void Approximate::addActiveDeviceFilter(Device *device) {
-  addActiveDeviceFilter(device -> macAddress);
+  eth_addr macAddress;
+  device -> getMacAddress(macAddress);
+
+  addActiveDeviceFilter(macAddress);
 }
 
 void Approximate::addActiveDeviceFilter(int oui) {
@@ -313,11 +319,17 @@ void Approximate::removeActiveDeviceFilter(String macAddress) {
 }
 
 void Approximate::removeActiveDeviceFilter(Device &device) {
-  removeActiveDeviceFilter(device.macAddress);
+  eth_addr macAddress;
+  device.getMacAddress(macAddress);
+
+  removeActiveDeviceFilter(macAddress);
 }
 
 void Approximate::removeActiveDeviceFilter(Device *device) {
-  removeActiveDeviceFilter(device -> macAddress);
+  eth_addr macAddress;
+  device -> getMacAddress(macAddress);
+
+  removeActiveDeviceFilter(macAddress);
 }
 
 void Approximate::removeActiveDeviceFilter(int oui) {
@@ -410,7 +422,7 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
   if(wifi_pkt_to_Packet(pkt, payloadLength, packet)) {
     Device *device = new Device();
     if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
-      if(proximateDeviceHandler && device -> rssi < 0 && device -> rssi > proximateRSSIThreshold) {
+      if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
         onProximateDevice(device);
       }
 
@@ -429,7 +441,10 @@ void Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
 
 void Approximate::onProximateDevice(Device *d) {
   if(d) {
-    Device *proximateDevice = Approximate::getProximateDevice(d -> macAddress);
+    eth_addr macAddress;
+    d -> getMacAddress(macAddress);
+
+    Device *proximateDevice = Approximate::getProximateDevice(macAddress);
 
     if(proximateDevice) {
       proximateDevice->update(d);
@@ -586,13 +601,13 @@ bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *devi
     if(eth_addr_cmp(&(packet -> src), &bssid)) {
       //packet sent to this device - RSSI only informative for messages from device
       device -> init(packet -> dst, bssid, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
-      ArpTable::setIPAddress(device);
+      ArpTable::lookupIPAddress(device);
       success = true;
     }
     else if(eth_addr_cmp(&(packet -> dst), &bssid)) {
       //packet sent by this device
       device -> init(packet -> src, bssid, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
-      ArpTable::setIPAddress(device);
+      ArpTable::lookupIPAddress(device);
       success = true;
     }
   }
