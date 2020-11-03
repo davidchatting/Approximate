@@ -51,7 +51,7 @@ void Device::update(Device *d) {
 }
 
 void Device::getMacAddress(eth_addr &macAddress) {
-    eth_addr_cmp(&this -> macAddress, &macAddress);
+    ETHADDR16_COPY(&macAddress, &this -> macAddress);
 }
 
 String Device::getMacAddressAsString() {
