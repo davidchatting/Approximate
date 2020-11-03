@@ -48,6 +48,6 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
     if(event == Approximate::RECEIVE) {
-      ledOnUntilMs = millis() + (device -> getPayloadLengthBytes()/10);
+      ledOnUntilMs = millis() + (device -> getPayloadSizeBytes()/10);
     }
 }
