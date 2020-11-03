@@ -41,18 +41,23 @@ bool Filter::matches(eth_addr *macAddress) {
 bool Filter::matches(Device *device) {
     bool result = false;
 
-    if(matches(&(device -> macAddress))) {
-        switch(direction) {
-            case EITHER:
-                result = true;  break;     
-            case NEITHER:
-                result = false; break;
-            case SENDS:
-                result = device -> isUploading();
-                break;
-            case RECEIVES:
-                result = device -> isDownloading();
-                break;      
+    if(device) {
+        eth_addr macAddress;
+        device -> getMacAddress(macAddress);
+
+        if(matches(&macAddress)) {
+            switch(direction) {
+                case EITHER:
+                    result = true;  break;     
+                case NEITHER:
+                    result = false; break;
+                case SENDS:
+                    result = device -> isUploading();
+                    break;
+                case RECEIVES:
+                    result = device -> isDownloading();
+                    break;      
+            }
         }
     }
 

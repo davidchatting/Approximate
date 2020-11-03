@@ -50,6 +50,10 @@ void Device::update(Device *d) {
     if(d) init(d -> macAddress, d -> bssid, d -> channel, d -> rssi, d -> lastSeenAtMs, d -> dataFlowBytes, d -> ipAddress.addr);
 }
 
+void Device::getMacAddress(eth_addr &macAddress) {
+    ETHADDR16_COPY(&macAddress, &this -> macAddress);
+}
+
 String Device::getMacAddressAsString() {
     String macAddressAsString = "";
 
@@ -78,6 +82,10 @@ char *Device::getBssidAs_c_str(char *out) {
     return(out);
 }
 
+void Device::getIPAddress(ip4_addr_t &ipAddress) {
+    ipAddress.addr = this -> ipAddress.addr;
+}
+
 String Device::getIPAddressAsString() {
     String ipAddressAsString;
     ipAddressAsString.reserve(16);
@@ -95,6 +103,10 @@ char *Device::getIPAddressAs_c_str(char *out) {
     }
 
     return(out);
+}
+
+void Device::setIPAddress(ip4_addr_t &ipAddress) {
+    this -> ipAddress.addr = ipAddress.addr;
 }
 
 bool Device::hasIPAddress() {
