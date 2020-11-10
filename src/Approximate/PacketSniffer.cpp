@@ -10,7 +10,6 @@
 
 PacketSniffer::PacketEventHandler PacketSniffer::packetEventHandler = NULL;
 bool PacketSniffer::running = false;
-int PacketSniffer::minRSSI = -100;
 
 PacketSniffer::PacketSniffer() {
   Serial.println("PacketSniffer::PacketSniffer");
@@ -59,11 +58,9 @@ void PacketSniffer::end() {
 
     #if defined(ESP8266)
       wifi_promiscuous_enable(0);
-      //wifi_set_promiscuous_rx_cb(NULL);
       
     #elif defined(ESP32)
       esp_wifi_set_promiscuous(false);
-      //esp_wifi_set_promiscuous_rx_cb(NULL);
       
     #endif
 
@@ -137,14 +134,6 @@ void PacketSniffer::setChannelScan(bool channelScan) {
   this->channelScan = channelScan;
 }
 
-int PacketSniffer::getMinRSSI() {
-  return(minRSSI);
-}
-
-void PacketSniffer::setMinRSSI(int minRSSI) {
-  this->minRSSI = minRSSI;
-}
-
 void PacketSniffer::setPacketEventHandler(PacketEventHandler incomingEventHandler) {
   packetEventHandler = incomingEventHandler;
 }
@@ -176,6 +165,6 @@ void PacketSniffer::rxCallback_32(void* buf, wifi_promiscuous_pkt_type_t type) {
 
 void PacketSniffer::rxCallback(wifi_promiscuous_pkt_t *packet, uint16_t len, wifi_promiscuous_pkt_type_t type) {
   if (running && packetEventHandler) {
-    if(packet->rx_ctrl.rssi > minRSSI)  packetEventHandler(packet, len, (int) type);
+    packetEventHandler(packet, len, (int) type);
   }
 }
