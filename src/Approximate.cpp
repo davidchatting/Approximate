@@ -17,6 +17,8 @@ ArpTable *Approximate::arpTable = NULL;
 Approximate::DeviceHandler Approximate::activeDeviceHandler = NULL;
 Approximate::DeviceHandler Approximate::proximateDeviceHandler = NULL;
 
+eth_addr Approximate::localMacAddress = {{0,0,0,0,0,0}};
+
 int Approximate::proximateRSSIThreshold = APPROXIMATE_PERSONAL_RSSI;
 eth_addr Approximate::localBSSID = {{0,0,0,0,0,0}};
 List<Filter *> Approximate::activeDeviceFilterList;
@@ -25,6 +27,9 @@ List<Device *> Approximate::proximateDeviceList;
 int Approximate::proximateLastSeenTimeoutMs = 60000;
 
 Approximate::Approximate() {
+  uint8_t ma[6];
+  WiFi.macAddress(ma);          
+  uint8_t_to_eth_addr(ma, localMacAddress);
 }
 
 bool Approximate::init(bool ipAddressResolution) {
@@ -424,13 +429,15 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
     if(!excludeBroadcastPackets || !packet -> isBroadcastPacket()) {
       Device *device = new Device();
       if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
-        if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
-          onProximateDevice(device);
-        }
+        if(!device -> matches(localMacAddress)) {
+          if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
+            onProximateDevice(device);
+          }
 
-        if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
-          DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
-          activeDeviceHandler(device, event); 
+          if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+            DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
+            activeDeviceHandler(device, event); 
+          }
         }
       }
       delete(device);

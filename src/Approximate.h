@@ -94,6 +94,8 @@ class Approximate {
 
     void updateProximateDeviceList();
 
+    static eth_addr localMacAddress;
+
     static eth_addr localBSSID;
     static List<Filter *> activeDeviceFilterList;
     static bool applyDeviceFilters(Device *device);
