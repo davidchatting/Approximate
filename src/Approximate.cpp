@@ -9,6 +9,7 @@
 #include "Approximate.h"
 
 bool Approximate::running = false;
+bool Approximate::excludeBroadcastPackets = true;
 
 PacketSniffer *Approximate::packetSniffer = PacketSniffer::getInstance();
 ArpTable *Approximate::arpTable = NULL;
@@ -420,18 +421,20 @@ void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *pkt) {
 void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength) {
   Packet *packet = new Packet();
   if(wifi_pkt_to_Packet(pkt, payloadLength, packet)) {
-    Device *device = new Device();
-    if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
-      if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
-        onProximateDevice(device);
-      }
+    if(!excludeBroadcastPackets || !packet -> isBroadcastPacket()) {
+      Device *device = new Device();
+      if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
+        if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
+          onProximateDevice(device);
+        }
 
-      if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
-        DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
-        activeDeviceHandler(device, event); 
+        if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+          DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
+          activeDeviceHandler(device, event); 
+        }
       }
+      delete(device);
     }
-    delete(device);
   }
   delete(packet);
 }

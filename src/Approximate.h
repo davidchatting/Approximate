@@ -57,6 +57,7 @@ class Approximate {
 
   private:
     static bool running;
+    static bool excludeBroadcastPackets;
 
     static PacketSniffer *packetSniffer;
     static ArpTable *arpTable;

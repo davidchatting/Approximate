@@ -19,6 +19,14 @@ class Packet {
         int rssi = 0;
         int channel = -1;
         uint16_t payloadLengthBytes = 0;
+
+        bool isBroadcastPacket() {
+            bool result = (this -> dst.addr[0] == 0x01) || 
+                (this -> dst.addr[0] == 0x33 && this -> dst.addr[0] == 0x33) || 
+                eth_addr_cmp(&this -> dst, &ethbroadcast);
+
+            return(result);
+        }
 };
 
 #endif

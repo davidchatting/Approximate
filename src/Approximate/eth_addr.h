@@ -17,6 +17,8 @@
 
 #endif
 
+const struct eth_addr ethbroadcast = {{0xff,0xff,0xff,0xff,0xff,0xff}};
+
 #ifndef ETHADDR16_COPY
   #define ETHADDR16_COPY(src, dst)  SMEMCPY(src, dst, ETHARP_HWADDR_LEN)
 #endif
