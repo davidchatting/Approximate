@@ -3,6 +3,8 @@ The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Libr
 
 Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology.
 
+![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
+
 ## Installation
 
 <del>The latest stable release of Approximate is available in the Arduino IDE Library Manager - search for "Approximate". Click install.</del>
