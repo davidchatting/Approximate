@@ -14,7 +14,6 @@
 
 #elif defined(ESP32)
     #include "lwip/etharp.h"
-    const struct eth_addr ethbroadcast = {{0xff,0xff,0xff,0xff,0xff,0xff}};
     
 #endif
 
