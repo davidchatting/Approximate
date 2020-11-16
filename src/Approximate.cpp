@@ -9,7 +9,6 @@
 #include "Approximate.h"
 
 bool Approximate::running = false;
-bool Approximate::excludeBroadcastPackets = true;
 
 PacketSniffer *Approximate::packetSniffer = PacketSniffer::getInstance();
 ArpTable *Approximate::arpTable = NULL;
@@ -17,7 +16,7 @@ ArpTable *Approximate::arpTable = NULL;
 Approximate::DeviceHandler Approximate::activeDeviceHandler = NULL;
 Approximate::DeviceHandler Approximate::proximateDeviceHandler = NULL;
 
-eth_addr Approximate::localMacAddress = {{0,0,0,0,0,0}};
+eth_addr Approximate::ownMacAddress = {{0,0,0,0,0,0}};
 
 int Approximate::proximateRSSIThreshold = APPROXIMATE_PERSONAL_RSSI;
 eth_addr Approximate::localBSSID = {{0,0,0,0,0,0}};
@@ -29,7 +28,7 @@ int Approximate::proximateLastSeenTimeoutMs = 60000;
 Approximate::Approximate() {
   uint8_t ma[6];
   WiFi.macAddress(ma);          
-  uint8_t_to_eth_addr(ma, localMacAddress);
+  uint8_t_to_eth_addr(ma, ownMacAddress);
 }
 
 bool Approximate::init(bool ipAddressResolution) {
@@ -426,10 +425,9 @@ void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *pkt) {
 void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength) {
   Packet *packet = new Packet();
   if(wifi_pkt_to_Packet(pkt, payloadLength, packet)) {
-    if(!excludeBroadcastPackets || !packet -> isBroadcastPacket()) {
       Device *device = new Device();
       if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
-        if(!device -> matches(localMacAddress)) {
+        if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
           if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
             onProximateDevice(device);
           }
@@ -441,7 +439,6 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
         }
       }
       delete(device);
-    }
   }
   delete(packet);
 }
@@ -619,6 +616,12 @@ bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *devi
       device -> init(packet -> src, bssid, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
       ArpTable::lookupIPAddress(device);
       success = true;
+    }
+    else if(eth_addr_cmp(&(packet -> bssid), &bssid)) {
+      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n", packet -> dst.addr[0], packet -> dst.addr[1], packet -> dst.addr[2], packet -> dst.addr[3], packet -> dst.addr[4], packet -> dst.addr[5]);
+      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n", packet -> src.addr[0], packet -> src.addr[1], packet -> src.addr[2], packet -> src.addr[3], packet -> src.addr[4], packet -> src.addr[5]);
+      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n", packet -> bssid.addr[0], packet -> bssid.addr[1], packet -> bssid.addr[2], packet -> bssid.addr[3], packet -> bssid.addr[4], packet -> bssid.addr[5]);
+      Serial.println("-");
     }
   }
 

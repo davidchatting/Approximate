@@ -57,7 +57,6 @@ class Approximate {
 
   private:
     static bool running;
-    static bool excludeBroadcastPackets;
 
     static PacketSniffer *packetSniffer;
     static ArpTable *arpTable;
@@ -94,7 +93,7 @@ class Approximate {
 
     void updateProximateDeviceList();
 
-    static eth_addr localMacAddress;
+    static eth_addr ownMacAddress;
 
     static eth_addr localBSSID;
     static List<Filter *> activeDeviceFilterList;
