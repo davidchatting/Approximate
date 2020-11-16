@@ -68,6 +68,11 @@ class Device {
         int getUploadSizeBytes();
         int getDownloadSizeBytes();
         int getPayloadSizeBytes();
+
+        bool isUniversal();
+        bool isLocal();
+        bool isIndividual();
+        bool isGroup();
 };
 
 #endif
