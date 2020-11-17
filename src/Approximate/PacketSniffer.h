@@ -28,10 +28,6 @@ class PacketSniffer {
     bool getChannelScan();
     void setChannelScan(bool channelScan);
 
-    int getMinRSSI();
-    void setMinRSSI(int minRSSI);
-    static int minRSSI;
-
     typedef void (*PacketEventHandler)(wifi_promiscuous_pkt_t *packet, uint16_t len, int type);
     void setPacketEventHandler(PacketEventHandler incomingEventHandler);
 

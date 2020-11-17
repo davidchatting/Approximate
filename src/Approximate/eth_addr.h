@@ -14,7 +14,7 @@
 
 #elif defined(ESP32)
     #include "lwip/etharp.h"
-
+    
 #endif
 
 #ifndef ETHADDR16_COPY

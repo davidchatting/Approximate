@@ -24,7 +24,7 @@
 #define APPROXIMATE_INTIMATE_RSSI -20
 #define APPROXIMATE_PERSONAL_RSSI -40
 #define APPROXIMATE_SOCIAL_RSSI -60
-#define APPROXIMATE_PUBLIC_RSSI -80  //TODO: interaction with min RSSI in PacketSniffer
+#define APPROXIMATE_PUBLIC_RSSI -80
 
 class Approximate {
   public:
@@ -92,6 +92,8 @@ class Approximate {
     static DeviceHandler proximateDeviceHandler;
 
     void updateProximateDeviceList();
+
+    static eth_addr ownMacAddress;
 
     static eth_addr localBSSID;
     static List<Filter *> activeDeviceFilterList;

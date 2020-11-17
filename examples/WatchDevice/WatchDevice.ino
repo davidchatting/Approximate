@@ -5,6 +5,8 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) October 2020
+
+    Example documented here > https://github.com/davidchatting/Approximate/tree/master#watch-device---using-a-proximate-device-handler-and-an-active-device-handler
 */
 
 #include <Approximate.h>

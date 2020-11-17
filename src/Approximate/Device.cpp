@@ -169,3 +169,21 @@ int Device::getUploadSizeBytes() {
 int Device::getPayloadSizeBytes(){
     return(abs(dataFlowBytes));
 }
+
+bool Device::isUniversal() {
+    return(!isLocal());
+}
+
+bool Device::isIndividual() {
+    return(!isGroup());
+}
+
+//Universal/local and individual/group defined by: https://standards.ieee.org/content/dam/ieee-standards/standards/web/documents/tutorials/macgrp.pdf
+
+bool Device::isLocal() {
+    return((macAddress.addr[0] & 0x2 == 0x2) && !isGroup());
+}
+
+bool Device::isGroup() {
+    return(macAddress.addr[0] & 0x1 == 0x1);
+}
