@@ -22,7 +22,7 @@ In addition, the following libraries are also required:
 Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology.
 
 ## Examples
-This section describes in some technical detail of the examples available from the `Examples` menu once Approximate is correctly installed.
+This section describes in some technical detail each of the examples available from the `Examples` menu once Approximate is correctly installed.
 
 Every Approximate sketch has this essential structure:
 
