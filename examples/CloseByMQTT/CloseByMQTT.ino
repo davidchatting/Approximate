@@ -5,6 +5,8 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) October 2020
+
+    Example documented here > https://github.com/davidchatting/Approximate/tree/master#close-by-mqtt---make-a-connection-to-the-cloud
 */
 
 #include <Approximate.h>
