@@ -1,5 +1,5 @@
 # The Approximate Library
-The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions between your Internet of Things and the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32), perhaps a switch that operates the nearest lamp or a song plays when you (and your phone) come home.
+The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions between your Internet of Things and the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32), perhaps a switch that operates the nearest lamp or a song that plays when you (and your phone) come home.
 
 ![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
 
