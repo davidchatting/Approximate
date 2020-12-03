@@ -5,7 +5,7 @@ The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Libr
 
 ## Installation
 
-<del>The latest stable release of Approximate is available in the Arduino IDE Library Manager - search for "Approximate". Click install.</del>
+The latest stable release of Approximate is available in the Arduino IDE Library Manager - search for "Approximate". Click install.
 
 Alternatively, Approximate can be installed manually. First locate and open the `libraries` directory used by the Arduino IDE, then clone this repository (https://github.com/davidchatting/Approximate) into that folder - this will create a new subfolder called `Approximate`.
 
