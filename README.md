@@ -172,7 +172,7 @@ void addActiveDeviceFilter(int oui);
 
 ![WatchDevice example](./images/approx-example-watchdevice.gif)
 
-The [WatchDevice example](examples/WatchDevice) creates a temporary pair with a proximate device and then flashes the LED to the amount of data (number of bytes) that device is receiving.
+The [WatchDevice example](examples/WatchDevice) creates a temporary pair with a proximate device and then flashes the LED to show the amount of data (number of bytes) that device is receiving.
 
 ```
 #include <Approximate.h>
