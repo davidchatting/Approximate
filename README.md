@@ -283,7 +283,7 @@ In its simplest form `Approximate::onceWifiStatus()` is used as shown below - th
   approx.connectWiFi();
 ```
 
-The CloseByMQTT example demonstrates how `Approximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected using  once the MQTT message is sent `Approximate::disconnectWiFi()`, to allow monitoring to resume.
+The CloseByMQTT example demonstrates how `Approximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected once the MQTT message is sent `Approximate::disconnectWiFi()`, to allow monitoring to resume.
 
 ### Close By Sonoff - interacting with devices
 
