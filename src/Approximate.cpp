@@ -166,6 +166,7 @@ void Approximate::begin(voidFnPtr thenFnPtr) {
     running = true;
   }, thenFnPtr);
   connectWiFi();
+  Serial.println("Approximate::begin DONE");
 }
 
 void Approximate::end() {
@@ -265,6 +266,13 @@ void Approximate::addActiveDeviceFilter(String macAddress) {
   addActiveDeviceFilter(macAddress_eth_addr);
 }
 
+void Approximate::addActiveDeviceFilter(char *macAddress) {
+  eth_addr macAddress_eth_addr;
+  c_str_to_eth_addr(macAddress, macAddress_eth_addr);
+
+  addActiveDeviceFilter(macAddress_eth_addr);
+}
+
 void Approximate::addActiveDeviceFilter(Device &device) {
   eth_addr macAddress;
   device.getMacAddress(macAddress);
@@ -292,6 +300,11 @@ void Approximate::addActiveDeviceFilter(eth_addr &macAddress) {
 }
 
 void Approximate::setActiveDeviceFilter(String macAddress) {
+  removeAllActiveDeviceFilters();
+  addActiveDeviceFilter(macAddress);
+}
+
+void Approximate::setActiveDeviceFilter(char *macAddress) {
   removeAllActiveDeviceFilters();
   addActiveDeviceFilter(macAddress);
 }
@@ -540,15 +553,21 @@ bool Approximate::oui_to_eth_addr(int oui, eth_addr &out) {
 }
 
 bool Approximate::String_to_eth_addr(String &in, eth_addr &out) {
+  bool success = c_str_to_eth_addr(in.c_str(), out);
+
+  return(success);
+}
+
+bool Approximate::c_str_to_eth_addr(const char *in, eth_addr &out) {
   bool success = false;
 
   //clear:
   for(int n=0; n<6; ++n) out.addr[n] = 0;
 
   //basic format test ##.##.##.##.##.##
-  if(in.length() == 17) {
+  if(strlen(in) == 17) {
     int a, b, c, d, e, f;
-    sscanf((char *)in.c_str(), "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
+    sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
 
     out.addr[0] = a;
     out.addr[1] = b;

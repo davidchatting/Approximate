@@ -44,6 +44,7 @@ class Approximate {
     } DeviceEvent;
 
     typedef void (*DeviceHandler)(Device *device, DeviceEvent event);
+    typedef void (*ChannelStateHandler)();
 
     static String toString(DeviceEvent e) {
       switch (e) {
@@ -90,6 +91,7 @@ class Approximate {
 
     static DeviceHandler activeDeviceHandler;
     static DeviceHandler proximateDeviceHandler;
+    static ChannelStateHandler channelStateHandler;
 
     void updateProximateDeviceList();
 
@@ -120,6 +122,7 @@ class Approximate {
 
     //add one more filter
     void addActiveDeviceFilter(String macAddress);
+    void addActiveDeviceFilter(char *macAddress);
     void addActiveDeviceFilter(Device &device);
     void addActiveDeviceFilter(Device *device);
     void addActiveDeviceFilter(eth_addr &macAddress);
@@ -127,6 +130,7 @@ class Approximate {
 
     //set exactly one filter
     void setActiveDeviceFilter(String macAddress);
+    void setActiveDeviceFilter(char *macAddress);
     void setActiveDeviceFilter(Device &device);
     void setActiveDeviceFilter(Device *device);
     void setActiveDeviceFilter(eth_addr &macAddress);
@@ -163,6 +167,7 @@ class Approximate {
     static bool MacAddr_to_eth_addr(MacAddr *in, eth_addr &out);
     static bool uint8_t_to_eth_addr(uint8_t *in, eth_addr &out);
     static bool oui_to_eth_addr(int oui, eth_addr &out);
+    static bool c_str_to_eth_addr(const char *in, eth_addr &out);
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
     static bool eth_addr_to_c_str(eth_addr &in, char *out);
