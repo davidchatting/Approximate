@@ -35,8 +35,8 @@ bool Approximate::init(bool ipAddressResolution) {
   bool success = false;
 
   if(WiFi.status() == WL_CONNECTED) {
-    this->ssid = WiFi.SSID();
-    this->password = WiFi.psk();
+    strcpy(this->ssid, WiFi.SSID().c_str());
+    strcpy(this->password, WiFi.psk().c_str());
 
     if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution)) {
       success = true;
@@ -54,8 +54,8 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
     if(WiFi.SSID(i) == ssid) {
       if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
         //Network is either open or a password is supplied
-        this->ssid = ssid;
-        this->password = password;
+        strcpy(this->ssid, ssid.c_str());
+        strcpy(this->password, password.c_str());
 
         if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution)) {
           success = true;
@@ -70,8 +70,9 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
 bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution) {
   bool success = true;
 
-  WiFi.mode(WIFI_STA);
   WiFi.disconnect();
+  WiFi.persistent(false);
+  WiFi.mode(WIFI_STA);
   delay(100);
 
   packetSniffer -> init(channel);
@@ -221,19 +222,88 @@ void Approximate::onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatu
   }
 }
 
-void Approximate::connectWiFi() {
-  connectWiFi(ssid, password);
+wl_status_t Approximate::connectWiFi() {
+  return(connectWiFi(this -> ssid, this -> password));
 }
 
-void Approximate::connectWiFi(String ssid, String password) {
+// esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
+//   switch(event->event_id) {
+//   case SYSTEM_EVENT_STA_START:
+//       esp_wifi_connect();
+//       break;
+//   case SYSTEM_EVENT_STA_GOT_IP:
+//       ESP_LOGI(TAG, "Connected with IP Address:%s",
+//           ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
+//       break;
+//   case SYSTEM_EVENT_STA_DISCONNECTED:
+//       esp_wifi_connect();
+//       break;
+//   return ESP_OK;
+//   }
+// }
+
+wl_status_t Approximate::connectWiFi(String ssid, String password) {
+  connectWiFi(ssid.c_str(), password.c_str());
+}
+
+wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
+  Serial.printf("Approximate::connectWiFi %s %s\n", ssid, password);
+
   if(WiFi.status() != WL_CONNECTED) {
-    if(ssid.length() > 0) {
+    if(strlen(ssid) > 0) {
       #if defined(ESP8266)
         if (packetSniffer)  packetSniffer -> end();
+        WiFi.begin(ssid, password);
+
+      #elif defined(ESP32)
+        //WiFi.begin() for the ESP32 (1.0.4) > https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFiSTA.cpp - doesn't call esp_wifi_init() or esp_wifi_start() - which are needed later for esp_wifi_set_csi()
+
+        if(!WiFi.enableSTA(true)) {
+            log_e("STA enable failed!");
+            return WL_CONNECT_FAILED;
+        }
+
+        if(!ssid || *ssid == 0x00 || strlen(ssid) > 31) {
+            log_e("SSID too long or missing!");
+            return WL_CONNECT_FAILED;
+        }
+
+        if(password && strlen(password) > 64) {
+            log_e("password too long!");
+            return WL_CONNECT_FAILED;
+        }
+
+        wifi_config_t conf;
+        memset(&conf, 0, sizeof(wifi_config_t));
+        strcpy(reinterpret_cast<char*>(conf.sta.ssid), ssid);
+
+        if(password) {
+            if (strlen(password) == 64){ // it's not a password, is the PSK
+                memcpy(reinterpret_cast<char*>(conf.sta.password), password, 64);
+            } else {
+                strcpy(reinterpret_cast<char*>(conf.sta.password), password);
+            }
+        }
+
+        if(esp_wifi_disconnect()){
+            log_e("disconnect failed!");
+            return WL_CONNECT_FAILED;
+        }
+        esp_wifi_set_config(WIFI_IF_STA, &conf);
+
+        if(tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA) == ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED){
+            log_e("dhcp client start failed!");
+            return WL_CONNECT_FAILED;
+        }
+
+        if(esp_wifi_connect()) {
+            log_e("connect failed!");
+            return WL_CONNECT_FAILED;
+        }
+        
       #endif
 
-      Serial.printf("Approximate::connectWiFi %s %s\n", ssid.c_str(), password.c_str());
-      WiFi.begin(ssid.c_str(), password.c_str());
+      return(WiFi.status());
     }
   }
 }
@@ -420,6 +490,9 @@ void Approximate::setProximateLastSeenTimeoutMs(int proximateLastSeenTimeoutMs) 
   Approximate::proximateLastSeenTimeoutMs = proximateLastSeenTimeoutMs;
 }
 
+void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler){
+}
+
 void Approximate::packetEventHandler(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type) {
   switch (type) {
     case PKT_MGMT: parseMgmtPacket(pkt); break;
@@ -483,7 +556,7 @@ void Approximate::onProximateDevice(Device *d) {
 }
 
 void Approximate::updateProximateDeviceList() {
-  if(packetSniffer && packetSniffer -> isRunning()) {
+  if(packetSniffer && packetSniffer -> isRunning() && proximateLastSeenTimeoutMs > 0) {
     //only update if we have the possibility of new observations
     Device *proximateDevice = NULL;
     for (int n = 0; n < proximateDeviceList.Count(); n++) {
@@ -564,7 +637,7 @@ bool Approximate::c_str_to_eth_addr(const char *in, eth_addr &out) {
   //clear:
   for(int n=0; n<6; ++n) out.addr[n] = 0;
 
-  //basic format test ##.##.##.##.##.##
+  //basic format test ##:##:##:##:##:##
   if(strlen(in) == 17) {
     int a, b, c, d, e, f;
     sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);

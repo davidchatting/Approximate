@@ -9,6 +9,7 @@
 #include "PacketSniffer.h"
 
 PacketSniffer::PacketEventHandler PacketSniffer::packetEventHandler = NULL;
+PacketSniffer::ChannelEventHandler PacketSniffer::channelEventHandler = NULL;
 bool PacketSniffer::running = false;
 
 PacketSniffer::PacketSniffer() {
@@ -21,7 +22,7 @@ PacketSniffer* PacketSniffer::getInstance() {
   return &ps;
 }
 
-void PacketSniffer::begin() {
+bool PacketSniffer::begin() {
   if(!running) {
     Serial.println("PacketSniffer::begin");
 
@@ -33,23 +34,42 @@ void PacketSniffer::begin() {
       wifi_promiscuous_enable(1);
       
     #elif defined(ESP32)
-      wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-      esp_wifi_init(&cfg);
-
-      tcpip_adapter_init();
-      esp_event_loop_init(NULL, NULL);
+      wifi_init_config_t wifiConf = WIFI_INIT_CONFIG_DEFAULT();
+      Serial.printf("wifiConf.csi_enable  %i\n", wifiConf.csi_enable);  //Otherwise need to #define CONFIG_ESP32_WIFI_CSI_ENABLED 1
+        
       esp_wifi_set_mode(WIFI_MODE_APSTA);
-      esp_wifi_start();
       
       esp_wifi_set_promiscuous(true);
       esp_wifi_set_promiscuous_rx_cb(&rxCallback_32);
 
-      esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N);
+      Serial.printf("esp_wifi_set_csi(true) %i\n", esp_wifi_set_csi(true));
+      if(esp_wifi_set_csi(true) == ESP_OK) {
+        Serial.println("CSI enabled");
+
+        wifi_csi_config_t configuration_csi;
+        configuration_csi.lltf_en = true;
+        configuration_csi.htltf_en = true;
+        configuration_csi.stbc_htltf2_en = true;
+        configuration_csi.ltf_merge_en = true;
+        configuration_csi.channel_filter_en = true;
+        configuration_csi.manu_scale = true;
+        configuration_csi.shift = 0; // 0->15
+
+        esp_wifi_set_csi_config(&configuration_csi);
+        esp_wifi_set_csi_rx_cb(&csiCallback_32, NULL);
+
+        esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N);
+      }
+      else {
+        Serial.println("CSI disabled");
+      }
 
     #endif
 
     running = true;
   }
+
+  return(running);
 }
 
 void PacketSniffer::end() {
@@ -134,8 +154,12 @@ void PacketSniffer::setChannelScan(bool channelScan) {
   this->channelScan = channelScan;
 }
 
-void PacketSniffer::setPacketEventHandler(PacketEventHandler incomingEventHandler) {
-  packetEventHandler = incomingEventHandler;
+void PacketSniffer::setPacketEventHandler(PacketEventHandler packetEventHandler) {
+  this -> packetEventHandler = packetEventHandler;
+}
+
+void PacketSniffer::setChannelEventHandler(ChannelEventHandler channelEventHandler) {
+  this -> channelEventHandler = channelEventHandler;
 }
 
 void PacketSniffer::rxCallback_8266(uint8_t *buf, uint16_t len) {
@@ -167,4 +191,31 @@ void PacketSniffer::rxCallback(wifi_promiscuous_pkt_t *packet, uint16_t len, wif
   if (running && packetEventHandler) {
     packetEventHandler(packet, len, (int) type);
   }
+}
+
+void PacketSniffer::csiCallback_32(void *ctx, wifi_csi_info_t *data) {
+  if (running && channelEventHandler) {
+    channelEventHandler();
+  }
+
+  #if defined(ESP32)
+    if(data->len < 128) {
+      return;
+    }
+
+    //source MAC address of the CSI data:
+    for(int i = 0; i < 6; i++) {
+      Serial.printf("%02x:", data->mac[i]);
+    }
+    Serial.printf("\t");
+
+    int8_t* my_ptr = data->buf;
+    // first number is the wifi channel
+    //Serial.printf("%d\t", WIFI_CHANNEL); //NO! This is buf[2]?
+    for(int i = 0; i < 128; i++) {
+      Serial.printf("%d\t", *my_ptr);
+      my_ptr++;
+    }
+    Serial.print("\n");
+  #endif
 }

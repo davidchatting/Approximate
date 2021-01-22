@@ -62,8 +62,8 @@ class Approximate {
     static PacketSniffer *packetSniffer;
     static ArpTable *arpTable;
 
-    String ssid;
-    String password;
+    char *ssid = new char[32];
+    char *password = new char[64];
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
     bool init(int channel, uint8_t *bssid, bool ipAddressResolution);
@@ -107,6 +107,7 @@ class Approximate {
     static int proximateRSSIThreshold;
     static int proximateLastSeenTimeoutMs;
 
+    //static esp_err_t wifiEventHandler(void *ctx, system_event_t *event);
     void printWiFiStatus();
 
   public:
@@ -151,12 +152,14 @@ class Approximate {
 
     void setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive = true);
     void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
+    void setChannelStateHandler(ChannelStateHandler channelStateHandler);
 
     static void setProximateRSSIThreshold(int proximateRSSIThreshold);
     static void setProximateLastSeenTimeoutMs(int proximateLastSeenTimeoutMs);
 
-    void connectWiFi(String ssid, String password);
-    void connectWiFi();
+    wl_status_t connectWiFi(String ssid, String password);
+    wl_status_t connectWiFi(char *ssid, char *password);
+    wl_status_t connectWiFi();
     void disconnectWiFi();
 
     void onceWifiStatus(wl_status_t status, voidFnPtr callBackFnPtr);
