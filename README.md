@@ -19,7 +19,7 @@ In addition, the following libraries are also required:
 * ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
 
 ## Limitations
-Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology.
+Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology. This means that devices that are connected to a 5GHz WiFi network will be invisible to this library.
 
 ## Examples
 This section describes in some technical detail each of the examples available from the `Examples` menu once Approximate is correctly installed.
@@ -272,7 +272,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-This example is an extension to the CloseBy example and retains the same structure. However, its use of the network for MQTT messages requires that the WiFi status be managed. In `setup()`, when the `Approximate::begin()` function is called, if the connection can be successfully established `WiFi.status()` will achieve a state of `WL_CONNECTED` at which point network calls may be made. However, this status change will take some time and happens asynchronously. For manage this, `Approximate::begin()` takes an optional lambda function called once the connection is established and used here to set the MQTT server details. The ESP8266 must then break this connection to monitor devices and then reconnect to make network calls, unlike the ESP32 which can maintain the connection and monitor devices; the Approximate library provides a mechanism that manages both cases - namely `Approximate::onceWifiStatus()`. Like `Approximate::begin()` takes a lambda function, but it also takes a status on which this behaviour will be triggered. The function will be called at most once, if the WiFi status is immediately available or once this transition is next made.
+This example is an extension to the CloseBy example and retains the same structure. However, its use of the network for MQTT messages requires that the WiFi status be managed. In `setup()`, when the `Approximate::begin()` function is called, if the connection can be successfully established `WiFi.status()` will achieve a state of `WL_CONNECTED` at which point network calls may be made. However, this status change will take some time and happens asynchronously. To manage this, `Approximate::begin()` takes an optional lambda function called once the connection is established and used here to set the MQTT server details. The ESP8266 must then break this connection to monitor devices and then reconnect to make network calls, unlike the ESP32 which can maintain the connection and monitor devices; the Approximate library provides a mechanism that manages both cases - namely `Approximate::onceWifiStatus()`. Like `Approximate::begin()` takes a lambda function, but it also takes a status on which this behaviour will be triggered. The function will be called at most once, if the WiFi status is immediately available or once this transition is next made.
 
 In its simplest form `Approximate::onceWifiStatus()` is used as shown below - the subsequent call to `approx.connectWiFi()` is made to establish the trigger WiFi status of `WL_CONNECTED` - if it is not already available.
 
