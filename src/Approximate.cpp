@@ -31,14 +31,14 @@ Approximate::Approximate() {
   uint8_t_to_eth_addr(ma, ownMacAddress);
 }
 
-bool Approximate::init(bool ipAddressResolution) {
+bool Approximate::init() {
   bool success = false;
 
   if(WiFi.status() == WL_CONNECTED) {
     strcpy(this->ssid, WiFi.SSID().c_str());
     strcpy(this->password, WiFi.psk().c_str());
 
-    if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution)) {
+    if(init(WiFi.channel(), WiFi.BSSID(), /*ipAddressResolution*/ false, /*csiEnabled*/ false)) {
       success = true;
     }
   }
@@ -46,7 +46,7 @@ bool Approximate::init(bool ipAddressResolution) {
   return(success);
 }
 
-bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
+bool Approximate::init(String ssid, String password, bool ipAddressResolution, bool csiEnabled) {
   bool success = false;
 
   int n = WiFi.scanNetworks();
@@ -57,7 +57,7 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
         strcpy(this->ssid, ssid.c_str());
         strcpy(this->password, password.c_str());
 
-        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution)) {
+        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled)) {
           success = true;
         }
       }
@@ -67,7 +67,7 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution) {
   return(success);
 }
 
-bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution) {
+bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled) {
   bool success = true;
 
   WiFi.disconnect();
@@ -77,6 +77,7 @@ bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution) {
 
   packetSniffer -> init(channel);
   packetSniffer -> setPacketEventHandler(packetEventHandler);
+  if(csiEnabled) packetSniffer -> setChannelEventHandler(channelEventHandler);
 
   eth_addr networkBSSID; 
   uint8_t_to_eth_addr(bssid, networkBSSID);
@@ -226,22 +227,6 @@ wl_status_t Approximate::connectWiFi() {
   return(connectWiFi(this -> ssid, this -> password));
 }
 
-// esp_err_t wifi_event_handler(void *ctx, system_event_t *event) {
-//   switch(event->event_id) {
-//   case SYSTEM_EVENT_STA_START:
-//       esp_wifi_connect();
-//       break;
-//   case SYSTEM_EVENT_STA_GOT_IP:
-//       ESP_LOGI(TAG, "Connected with IP Address:%s",
-//           ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-//       break;
-//   case SYSTEM_EVENT_STA_DISCONNECTED:
-//       esp_wifi_connect();
-//       break;
-//   return ESP_OK;
-//   }
-// }
-
 wl_status_t Approximate::connectWiFi(String ssid, String password) {
   connectWiFi(ssid.c_str(), password.c_str());
 }
@@ -257,6 +242,8 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
 
       #elif defined(ESP32)
         //WiFi.begin() for the ESP32 (1.0.4) > https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFiSTA.cpp - doesn't call esp_wifi_init() or esp_wifi_start() - which are needed later for esp_wifi_set_csi()
+        tcpip_adapter_init();
+        esp_event_loop_init(NULL, NULL);
 
         if(!WiFi.enableSTA(true)) {
             log_e("STA enable failed!");
@@ -271,7 +258,11 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
         if(password && strlen(password) > 64) {
             log_e("password too long!");
             return WL_CONNECT_FAILED;
+
         }
+
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        esp_wifi_init(&cfg);
 
         wifi_config_t conf;
         memset(&conf, 0, sizeof(wifi_config_t));
@@ -295,6 +286,8 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
             log_e("dhcp client start failed!");
             return WL_CONNECT_FAILED;
         }
+
+        esp_wifi_start();
 
         if(esp_wifi_connect()) {
             log_e("connect failed!");
@@ -530,6 +523,31 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
 }
 
 void Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
+}
+
+void Approximate::channelEventHandler(wifi_csi_info_t *data) {
+  #if defined(ESP32)
+    /*
+    if(data->len < 128) {
+      return;
+    }
+
+    //source MAC address of the CSI data:
+    for(int i = 0; i < 6; i++) {
+      Serial.printf("%02x:", data->mac[i]);
+    }
+    Serial.printf("\t");
+
+    int8_t* my_ptr = data->buf;
+    // first number is the wifi channel
+    //Serial.printf("%d\t", WIFI_CHANNEL); //NO! This is buf[2]?
+    for(int i = 0; i < 128; i++) {
+      Serial.printf("%d\t", *my_ptr);
+      my_ptr++;
+    }
+    Serial.print("\n");
+    */
+  #endif
 }
 
 void Approximate::onProximateDevice(Device *d) {

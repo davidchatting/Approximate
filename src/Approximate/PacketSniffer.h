@@ -31,7 +31,7 @@ class PacketSniffer {
     typedef void (*PacketEventHandler)(wifi_promiscuous_pkt_t *packet, uint16_t len, int type);
     void setPacketEventHandler(PacketEventHandler packetEventHandler);
 
-    typedef void (*ChannelEventHandler)();
+    typedef void (*ChannelEventHandler)(wifi_csi_info_t *data);
     void setChannelEventHandler(ChannelEventHandler channelEventHandler);
 
   private:
