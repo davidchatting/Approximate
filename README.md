@@ -6,6 +6,8 @@ The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Libr
 
 ![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
 
+Technically this library makes it easy to use WiFi signal strength ([RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) to estimate the physical distance to a device on your home network, then obtain its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and optionally its [IP address](https://en.wikipedia.org/wiki/IPv4). The network activity of these devices can also be observed.
+
 ## Installation
 
 The latest stable release of Approximate is available in the Arduino IDE Library Manager - search for "Approximate". Click install.
