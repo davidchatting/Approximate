@@ -9,7 +9,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-      name: Checkout ListLib
+    - name: Checkout ListLib
       uses: actions/checkout@v2
       with:
         repository: luisllamasbinaburo/Arduino-List
