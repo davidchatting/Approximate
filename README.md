@@ -1,7 +1,14 @@
+<!-- 
+![esp8266](https://github.com/davidchatting/Approximate/workflows/esp8266/badge.svg)
+![esp32](https://github.com/davidchatting/Approximate/workflows/esp32/badge.svg)
+-->
+
 # The Approximate Library
 The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions between your Internet of Things and the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32), perhaps a switch that operates the nearest lamp or a song that plays when you (and your phone) come home.
 
 ![CloseBySonoff example](./images/approx-example-closebysonoff.gif)
+
+Technically this library makes it easy to use WiFi signal strength ([RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) to estimate the physical distance to a device on your home network, then obtain its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and optionally its [IP address](https://en.wikipedia.org/wiki/IPv4). The network activity of these devices can also be observed.
 
 ## Installation
 
@@ -19,7 +26,7 @@ In addition, the following libraries are also required:
 * ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
 
 ## Limitations
-Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology.
+Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology. This means that devices that are connected to a 5GHz WiFi network will be invisible to this library.
 
 ## Examples
 This section describes in some technical detail each of the examples available from the `Examples` menu once Approximate is correctly installed.
@@ -172,7 +179,7 @@ void addActiveDeviceFilter(int oui);
 
 ![WatchDevice example](./images/approx-example-watchdevice.gif)
 
-The [WatchDevice example](examples/WatchDevice) creates a temporary pair with a proximate device and then flashes the LED to the amount of data (number of bytes) that device is receiving.
+The [WatchDevice example](examples/WatchDevice) creates a temporary pair with a proximate device and then flashes the LED to show the amount of data (number of bytes) that device is receiving.
 
 ```
 #include <Approximate.h>
@@ -272,7 +279,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-This example is an extension to the CloseBy example and retains the same structure. However, its use of the network for MQTT messages requires that the WiFi status be managed. In `setup()`, when the `Approximate::begin()` function is called, if the connection can be successfully established `WiFi.status()` will achieve a state of `WL_CONNECTED` at which point network calls may be made. However, this status change will take some time and happens asynchronously. For manage this, `Approximate::begin()` takes an optional lambda function called once the connection is established and used here to set the MQTT server details. The ESP8266 must then break this connection to monitor devices and then reconnect to make network calls, unlike the ESP32 which can maintain the connection and monitor devices; the Approximate library provides a mechanism that manages both cases - namely `Approximate::onceWifiStatus()`. Like `Approximate::begin()` takes a lambda function, but it also takes a status on which this behaviour will be triggered. The function will be called at most once, if the WiFi status is immediately available or once this transition is next made.
+This example is an extension to the CloseBy example and retains the same structure. However, its use of the network for MQTT messages requires that the WiFi status be managed. In `setup()`, when the `Approximate::begin()` function is called, if the connection can be successfully established `WiFi.status()` will achieve a state of `WL_CONNECTED` at which point network calls may be made. However, this status change will take some time and happens asynchronously. To manage this, `Approximate::begin()` takes an optional lambda function called once the connection is established and used here to set the MQTT server details. The ESP8266 must then break this connection to monitor devices and then reconnect to make network calls, unlike the ESP32 which can maintain the connection and monitor devices; the Approximate library provides a mechanism that manages both cases - namely `Approximate::onceWifiStatus()`. Like `Approximate::begin()` takes a lambda function, but it also takes a status on which this behaviour will be triggered. The function will be called at most once, if the WiFi status is immediately available or once this transition is next made.
 
 In its simplest form `Approximate::onceWifiStatus()` is used as shown below - the subsequent call to `approx.connectWiFi()` is made to establish the trigger WiFi status of `WL_CONNECTED` - if it is not already available.
 
@@ -283,7 +290,7 @@ In its simplest form `Approximate::onceWifiStatus()` is used as shown below - th
   approx.connectWiFi();
 ```
 
-The CloseByMQTT example demonstrates how `Approximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected using  once the MQTT message is sent `Approximate::disconnectWiFi()`, to allow monitoring to resume.
+The CloseByMQTT example demonstrates how `Approximate::onceWifiStatus()` can pass a parameter - here `onProximateDevice()` defines a json `String` that contains the details of the MQTT message - a `bool` parameter is also supported. Note that for an ESP8266 the WiFi must then be disconnected once the MQTT message is sent `Approximate::disconnectWiFi()`, to allow monitoring to resume.
 
 ### Close By Sonoff - interacting with devices
 
@@ -392,8 +399,8 @@ void switchCloseBySonoff(bool switchState) {
 
 This is a further extension to the CloseBy example and again retains the same structure. It uses a simple Proximate Device Handler (`onProximateDevice()`) and attempts to determine the type of the proximate device by its [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier). Those identifying as `0xD8F15B` are manufactured by Expressif Inc, used by Sonoff (see http://standards-oui.ieee.org/oui.txt) - `onCloseBySonoff()` is then called. If the button is pressed and released `switchCloseBySonoff()` will be called to first turn on and then off a proximate Sonoff socket. The LED is illuminated to show that a device is present.
 
-Significantly this example requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled by setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called. However, this will caused an addtional delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32 before the main program will operate. The ESP32 will periodically automatically refresh its ARP table, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
+Significantly this example requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled by setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called. However, this will cause an additional delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32 before the main program will operate. The ESP32 will periodically automatically refresh its ARP table, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
 
 ## Author
 
-The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Collaboration welcome - please contributions by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
+The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).

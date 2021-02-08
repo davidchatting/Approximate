@@ -79,11 +79,20 @@
       u8 payload[36]; // head of ieee80211 packet
       u16 cnt;        // number count of packet
   } wifi_promiscuous_pkt_t;
+
+  typedef struct {
+  } wifi_csi_info_t;
   
 #elif defined(ESP32)
+  #define CONFIG_ESP32_WIFI_CSI_ENABLED 1
+  #define WIFI_MODE WIFI_APSTA_MODE
+
   #include <WiFi.h>
   #include <Wire.h>
   #include "esp_wifi.h"
+  #include "esp_event.h"
+  #include "esp_wifi_types.h"
+  
 #endif
 
 typedef struct {
