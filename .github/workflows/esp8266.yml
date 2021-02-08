@@ -1,0 +1,24 @@
+name: esp8266
+on: [push, pull_request]
+jobs:
+  build:
+    name: Test compile examples for esp8266
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Checkout ListLib
+      uses: actions/checkout@v2
+      with:
+        repository: luisllamasbinaburo/Arduino-List
+        ref: master
+        path: CustomListLib
+
+    - name: Compile all examples
+      uses: ArminJo/arduino-test-compile@v3
+      with:
+        arduino-board-fqbn: esp8266:esp8266:generic
+        platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+        required-libraries: ArduinoJson,StreamUtils,ListLib
