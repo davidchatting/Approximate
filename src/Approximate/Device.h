@@ -9,7 +9,7 @@
 #ifndef Device_h
 #define Device_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "eth_addr.h"
 
 #define APPROXIMATE_UNKNOWN_RSSI 0

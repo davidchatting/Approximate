@@ -9,7 +9,7 @@
 #ifndef Approximate_h
 #define Approximate_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "Approximate/eth_addr.h"
 #include "Approximate/wifi_pkt.h"
 
@@ -19,7 +19,7 @@
 #include "Approximate/Device.h"
 #include "Approximate/Filter.h"
 
-#include "ListLib.h"              //https://github.com/luisllamasbinaburo/Arduino-List
+#include <ListLib.h>              //https://github.com/luisllamasbinaburo/Arduino-List
 
 #define APPROXIMATE_INTIMATE_RSSI -20
 #define APPROXIMATE_PERSONAL_RSSI -40

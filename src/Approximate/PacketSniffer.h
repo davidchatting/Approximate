@@ -9,7 +9,7 @@
 #ifndef PacketSniffer_h
 #define PacketSniffer_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "eth_addr.h"
 #include "wifi_pkt.h"
 

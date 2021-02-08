@@ -9,7 +9,7 @@
 #ifndef ArpTable_h
 #define ArpTable_h
 
-#include "Arduino.h"
+#include <Arduino.h>
 #include "eth_addr.h"
 
 #if defined(ESP8266)
