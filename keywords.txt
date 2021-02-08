@@ -46,7 +46,8 @@ oui_to_eth_addr	KEYWORD2
 String_to_eth_addr	KEYWORD2
 eth_addr_to_String	KEYWORD2
 eth_addr_to_c_str	KEYWORD2
-wifi_pkt_to_Packet	KEYWORD2
+wifi_promiscuous_pkt_to_Packet	KEYWORD2
+wifi_csi_info_to_Channel KEYWORD2
 Packet_to_Device	KEYWORD2
 
 # methods from Device.h
