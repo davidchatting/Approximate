@@ -15,7 +15,7 @@ Approximate approx;
 void setup() {
     Serial.begin(9600);
 
-    if (approx.init("MyHomeWiFi", "password")) {
+    if (approx.init("MyHomeWiFi", "password", false, true)) {
         approx.setChannelStateHandler(onChannelStateEvent);
         approx.begin();
     }
@@ -25,5 +25,7 @@ void loop() {
     approx.loop();
 }
 
-void onChannelStateEvent(Device *device) {
+void onChannelStateEvent(Channel *channel) {
+    Serial.println("onChannelStateEvent");
+    Serial.println(channel->getBssidAsString());
 }
