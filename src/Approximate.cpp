@@ -15,6 +15,7 @@ ArpTable *Approximate::arpTable = NULL;
 
 Approximate::DeviceHandler Approximate::activeDeviceHandler = NULL;
 Approximate::DeviceHandler Approximate::proximateDeviceHandler = NULL;
+Approximate::ChannelStateHandler Approximate::channelStateHandler = NULL;
 
 eth_addr Approximate::ownMacAddress = {{0,0,0,0,0,0}};
 
@@ -76,8 +77,8 @@ bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bo
   delay(100);
 
   packetSniffer -> init(channel);
-  packetSniffer -> setPacketEventHandler(packetEventHandler);
-  if(csiEnabled) packetSniffer -> setChannelEventHandler(channelEventHandler);
+  packetSniffer -> setPacketEventHandler(parsePacket);
+  if(csiEnabled) packetSniffer -> setChannelEventHandler(parseChannelStateInformation);
 
   eth_addr networkBSSID; 
   uint8_t_to_eth_addr(bssid, networkBSSID);
@@ -484,9 +485,10 @@ void Approximate::setProximateLastSeenTimeoutMs(int proximateLastSeenTimeoutMs) 
 }
 
 void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler){
+  Approximate::channelStateHandler = channelStateHandler;
 }
 
-void Approximate::packetEventHandler(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type) {
+void Approximate::parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type) {
   switch (type) {
     case PKT_MGMT: parseMgmtPacket(pkt); break;
     case PKT_CTRL: parseCtrlPacket(pkt); break;
@@ -525,9 +527,10 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
 void Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
 }
 
-void Approximate::channelEventHandler(wifi_csi_info_t *data) {
+void Approximate::parseChannelStateInformation(wifi_csi_info_t *data) {
   #if defined(ESP32)
-    /*
+    if(channelStateHandler) channelStateHandler();
+    
     if(data->len < 128) {
       return;
     }
@@ -546,7 +549,6 @@ void Approximate::channelEventHandler(wifi_csi_info_t *data) {
       my_ptr++;
     }
     Serial.print("\n");
-    */
   #endif
 }
 

@@ -83,13 +83,13 @@ class Approximate {
     voidFnPtr onceWifiStatusFnPtrPayload;
     wl_status_t triggerWifiStatus = WL_IDLE_STATUS;
 
-    static void packetEventHandler(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type);
+    static void parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type);
     static void parseMgmtPacket(wifi_promiscuous_pkt_t *pkt);
     static void parseCtrlPacket(wifi_promiscuous_pkt_t *pkt);
     static void parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
     static void parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
 
-    static void channelEventHandler(wifi_csi_info_t *data);
+    static void parseChannelStateInformation(wifi_csi_info_t *data);
 
     static DeviceHandler activeDeviceHandler;
     static DeviceHandler proximateDeviceHandler;
