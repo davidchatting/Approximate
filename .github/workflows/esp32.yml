@@ -9,13 +9,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Checkout ListLib
-      uses: actions/checkout@v2
-      with:
-        repository: luisllamasbinaburo/Arduino-List
-        ref: master
-        path: CustomListLib
-
     - name: Compile all examples
       uses: ArminJo/arduino-test-compile@v3
       with:
