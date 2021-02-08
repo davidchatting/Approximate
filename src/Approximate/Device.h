@@ -40,14 +40,18 @@ class Device {
         void getMacAddress(eth_addr &macAddress);
         String getMacAddressAsString();
         char *getMacAddressAs_c_str(char *out);
+        void setMacAddress(eth_addr &macAddress);
 
+        void getBssid(eth_addr &bssid);
         String getBssidAsString();
         char *getBssidAs_c_str(char *out);
+        void setBssid(eth_addr &bssid);
 
         void getIPAddress(ip4_addr_t &ipAddress);
         String getIPAddressAsString();
         char *getIPAddressAs_c_str(char *out);
         void setIPAddress(ip4_addr_t &ipAddress);
+        void setIPAddress(u32_t ipAddress);
         bool hasIPAddress();
 
         void setRSSI(int rssi);
@@ -61,6 +65,9 @@ class Device {
         uint32_t getOUI();
 
         int getChannel();
+        void setChannel(int channel);
+
+        void setDataFlowBytes(int dataFlowBytes);
 
         bool isUploading();
         bool isDownloading();

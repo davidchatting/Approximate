@@ -35,15 +35,15 @@ bool Device::operator ==(eth_addr &macAddress) {
 }
 
 void Device::init(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenAtMs, int dataFlowBytes, u32_t ipAddress) {
-    ETHADDR16_COPY(&this -> macAddress, &macAddress);
-    ETHADDR16_COPY(&this -> bssid, &bssid);
+    setMacAddress(macAddress);
+    setBssid(bssid);
     
-    this -> channel = channel;
-    this -> rssi = rssi;
+    setChannel(channel);
+    setRSSI(rssi);
     setLastSeenAtMs(lastSeenAtMs);
-    this -> dataFlowBytes = dataFlowBytes;
+    setDataFlowBytes(dataFlowBytes);
 
-    this -> ipAddress.addr = ipAddress;
+    setIPAddress(ipAddress);
 }
 
 void Device::update(Device *d) {
@@ -68,6 +68,10 @@ char *Device::getMacAddressAs_c_str(char *out) {
     return(out);
 }
 
+void Device::getBssid(eth_addr &bssid) {
+     ETHADDR16_COPY(&bssid, &this -> bssid);
+}
+
 String Device::getBssidAsString() {
     String bssidAsString = "";
 
@@ -80,6 +84,14 @@ char *Device::getBssidAs_c_str(char *out) {
     Approximate::eth_addr_to_c_str(bssid, out);
     
     return(out);
+}
+
+void Device::setMacAddress(eth_addr &macAddress) {
+    ETHADDR16_COPY(&this -> macAddress, &macAddress);
+}
+
+void Device::setBssid(eth_addr &bssid) {
+    ETHADDR16_COPY(&this -> bssid, &bssid);
 }
 
 void Device::getIPAddress(ip4_addr_t &ipAddress) {
@@ -106,7 +118,11 @@ char *Device::getIPAddressAs_c_str(char *out) {
 }
 
 void Device::setIPAddress(ip4_addr_t &ipAddress) {
-    this -> ipAddress.addr = ipAddress.addr;
+    setIPAddress(ipAddress.addr);
+}
+
+void Device::setIPAddress(u32_t ipAddress) {
+    this -> ipAddress.addr = ipAddress;
 }
 
 bool Device::hasIPAddress() {
@@ -144,6 +160,14 @@ uint32_t Device::getOUI() {
 
 int Device::getChannel() {
     return(channel);
+}
+
+void Device::setChannel(int channel) {
+    this -> channel = channel;
+}
+
+void Device::setDataFlowBytes(int dataFlowBytes) {
+    this -> dataFlowBytes = dataFlowBytes;
 }
 
 bool Device::isUploading() {
