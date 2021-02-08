@@ -10,17 +10,16 @@
 #define Device_h
 
 #include <Arduino.h>
+#include "Channel.h"
 #include "eth_addr.h"
 
 #define APPROXIMATE_UNKNOWN_RSSI 0
 
-class Device {
+class Device : public Channel {
     private:
         eth_addr macAddress = {{0,0,0,0,0,0}};
-        eth_addr bssid = {{0,0,0,0,0,0}};
         ip4_addr_t ipAddress;
         int rssi = APPROXIMATE_UNKNOWN_RSSI;
-        int channel = -1;
         long lastSeenAtMs = -1;
         int dataFlowBytes = 0;  //uploading is negative, downloading positive
 
@@ -42,11 +41,6 @@ class Device {
         char *getMacAddressAs_c_str(char *out);
         void setMacAddress(eth_addr &macAddress);
 
-        void getBssid(eth_addr &bssid);
-        String getBssidAsString();
-        char *getBssidAs_c_str(char *out);
-        void setBssid(eth_addr &bssid);
-
         void getIPAddress(ip4_addr_t &ipAddress);
         String getIPAddressAsString();
         char *getIPAddressAs_c_str(char *out);
@@ -63,9 +57,6 @@ class Device {
         bool matches(eth_addr &macAddress);
 
         uint32_t getOUI();
-
-        int getChannel();
-        void setChannel(int channel);
 
         void setDataFlowBytes(int dataFlowBytes);
 
