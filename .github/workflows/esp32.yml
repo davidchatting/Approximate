@@ -9,9 +9,16 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Checkout ListLib
+      uses: actions/checkout@v2
+      with:
+        repository: luisllamasbinaburo/Arduino-List
+        ref: master
+        path: CustomListLib
+
     - name: Compile all examples
       uses: ArminJo/arduino-test-compile@v3
       with:
         arduino-board-fqbn: esp32:esp32:esp32
         platform-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-        required-libraries: ArduinoJson,StreamUtils,WiFiClient,PubSubClient,ListLib
+        required-libraries: ArduinoJson,StreamUtils,ListLib
