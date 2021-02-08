@@ -529,11 +529,13 @@ void Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
 
 void Approximate::parseChannelStateInformation(wifi_csi_info_t *data) {
   #if defined(ESP32)
-    if(channelStateHandler) channelStateHandler();
-    
     if(data->len < 128) {
       return;
     }
+
+    Device *device = new Device();;
+
+    if(channelStateHandler) channelStateHandler(device);
 
     //source MAC address of the CSI data:
     for(int i = 0; i < 6; i++) {

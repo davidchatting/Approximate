@@ -44,7 +44,7 @@ class Approximate {
     } DeviceEvent;
 
     typedef void (*DeviceHandler)(Device *device, DeviceEvent event);
-    typedef void (*ChannelStateHandler)();
+    typedef void (*ChannelStateHandler)(Device *device);
 
     static String toString(DeviceEvent e) {
       switch (e) {

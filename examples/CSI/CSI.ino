@@ -25,5 +25,5 @@ void loop() {
     approx.loop();
 }
 
-void onChannelStateEvent() {
+void onChannelStateEvent(Device *device) {
 }
