@@ -16,6 +16,7 @@
 #include "Approximate/PacketSniffer.h"
 #include "Approximate/Packet.h"
 #include "Approximate/ArpTable.h"
+#include "Approximate/Channel.h"
 #include "Approximate/Device.h"
 #include "Approximate/Filter.h"
 
@@ -44,7 +45,7 @@ class Approximate {
     } DeviceEvent;
 
     typedef void (*DeviceHandler)(Device *device, DeviceEvent event);
-    typedef void (*ChannelStateHandler)(Device *device);
+    typedef void (*ChannelStateHandler)(Channel *channel);
 
     static String toString(DeviceEvent e) {
       switch (e) {
@@ -89,7 +90,7 @@ class Approximate {
     static void parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
     static void parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
 
-    static void parseChannelStateInformation(wifi_csi_info_t *data);
+    static void parseChannelStateInformation(wifi_csi_info_t *info);
 
     static DeviceHandler activeDeviceHandler;
     static DeviceHandler proximateDeviceHandler;
@@ -109,8 +110,13 @@ class Approximate {
     static int proximateRSSIThreshold;
     static int proximateLastSeenTimeoutMs;
 
-    //static esp_err_t wifiEventHandler(void *ctx, system_event_t *event);
     void printWiFiStatus();
+
+    static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
+    static bool wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *in, uint16_t payloadLengthBytes, Packet *out);
+    static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
+
+    static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
 
   public:
     Approximate();
@@ -176,8 +182,6 @@ class Approximate {
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
     static bool eth_addr_to_c_str(eth_addr &in, char *out);
-    static bool wifi_pkt_to_Packet(wifi_promiscuous_pkt_t *in, uint16_t payloadLengthBytes, Packet *out);
-    static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
 };
 
 #endif

@@ -504,53 +504,35 @@ void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *pkt) {
 }
 
 void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength) {
-  Packet *packet = new Packet();
-  if(wifi_pkt_to_Packet(pkt, payloadLength, packet)) {
-      Device *device = new Device();
-      if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
-        if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
-          if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
-            onProximateDevice(device);
-          }
-
-          if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
-            DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
-            activeDeviceHandler(device, event); 
-          }
-        }
+  Device *device = new Device();
+  if(Approximate::wifi_promiscuous_pkt_to_Device(pkt, payloadLength, device)) {
+    if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
+      if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
+        onProximateDevice(device);
       }
-      delete(device);
+
+      if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+        DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
+        activeDeviceHandler(device, event); 
+      }
+    }
   }
-  delete(packet);
+  delete(device);
 }
 
 void Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
 }
 
-void Approximate::parseChannelStateInformation(wifi_csi_info_t *data) {
+void Approximate::parseChannelStateInformation(wifi_csi_info_t *info) {
   #if defined(ESP32)
-    if(data->len < 128) {
-      return;
+    if(channelStateHandler) {
+      Channel *channel = new Channel();
+      if(wifi_csi_info_to_Channel(info, channel)) {
+        //TODO: apply filtering
+        channelStateHandler(channel);
+      }
+      delete channel;
     }
-
-    Device *device = new Device();;
-
-    if(channelStateHandler) channelStateHandler(device);
-
-    //source MAC address of the CSI data:
-    for(int i = 0; i < 6; i++) {
-      Serial.printf("%02x:", data->mac[i]);
-    }
-    Serial.printf("\t");
-
-    int8_t* my_ptr = data->buf;
-    // first number is the wifi channel
-    //Serial.printf("%d\t", WIFI_CHANNEL); //NO! This is buf[2]?
-    for(int i = 0; i < 128; i++) {
-      Serial.printf("%d\t", *my_ptr);
-      my_ptr++;
-    }
-    Serial.print("\n");
   #endif
 }
 
@@ -695,11 +677,38 @@ bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
   return(success);
 }
 
-bool Approximate::wifi_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Packet *packet) {
+// bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_csi_info_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
+//   bool success = false;
+
+//   Packet *packet = new Packet();
+//   if(wifi_promiscuous_pkt_to_Packet(wifi_pkt, payloadLengthBytes, packet)) {
+//       if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
+//         success = true;
+//       }
+//   }
+//   delete(packet);
+  
+//   return(success);
+// }
+
+bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device) {
+  bool success = false;
+
+  Packet *packet = new Packet();
+  if(wifi_promiscuous_pkt_to_Packet(pkt, payloadLengthBytes, packet)) {
+      if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
+        success = true;
+      }
+  }
+  delete(packet);
+  
+  return(success);
+}
+
+bool Approximate::wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Packet *packet) {
   bool success = false;
 
   if(wifi_pkt && packet) {
-    eth_addr src, dst, bssid;
     wifi_mgmt_hdr* header = (wifi_mgmt_hdr*)wifi_pkt -> payload;
     MacAddr_to_eth_addr(&header -> sa, packet -> src);
     MacAddr_to_eth_addr(&header -> da, packet -> dst);
@@ -731,13 +740,34 @@ bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *devi
       ArpTable::lookupIPAddress(device);
       success = true;
     }
-    else if(eth_addr_cmp(&(packet -> bssid), &bssid)) {
-      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n", packet -> dst.addr[0], packet -> dst.addr[1], packet -> dst.addr[2], packet -> dst.addr[3], packet -> dst.addr[4], packet -> dst.addr[5]);
-      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n", packet -> src.addr[0], packet -> src.addr[1], packet -> src.addr[2], packet -> src.addr[3], packet -> src.addr[4], packet -> src.addr[5]);
-      Serial.printf("%02X:%02X:%02X:%02X:%02X:%02X\n", packet -> bssid.addr[0], packet -> bssid.addr[1], packet -> bssid.addr[2], packet -> bssid.addr[3], packet -> bssid.addr[4], packet -> bssid.addr[5]);
-      Serial.println("-");
-    }
   }
+
+  return(success);
+}
+
+bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel) {
+  bool success = false;
+
+  #if defined(ESP32)
+    if(info->len >= 128) {
+      eth_addr bssid;
+      uint8_t_to_eth_addr(info -> mac, bssid);
+      channel -> setBssid(bssid);
+
+      /*
+      int8_t* my_ptr = info->buf;
+      // first number is the wifi channel
+      //Serial.printf("%d\t", WIFI_CHANNEL); //NO! This is buf[2]?
+      for(int i = 0; i < 128; i++) {
+        Serial.printf("%d\t", *my_ptr);
+        my_ptr++;
+      }
+      Serial.print("\n");
+      */
+
+      success = true;
+    }
+  #endif
 
   return(success);
 }
