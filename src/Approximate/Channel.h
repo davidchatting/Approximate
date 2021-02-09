@@ -17,9 +17,12 @@
 
 class Channel : public Network {
     private:
-
+        int8_t buf[128];
     public:
         Channel();
+
+        void setBuffer(int8_t *buf);
+        int8_t getBufferN(int n);
 };
 
 #endif
