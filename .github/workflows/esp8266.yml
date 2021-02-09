@@ -9,10 +9,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Checkout ListLib
-      uses: actions/checkout@master
+    - name: Checkout Arduino-List
+      uses: actions/checkout@v2
       with:
-        repository: luisllamasbinaburo/Arduino-List
+        repository: davidchatting/Arduino-List
         ref: master
         path: CustomListLib
 
@@ -22,4 +22,4 @@ jobs:
         arduino-board-fqbn: esp8266:esp8266:generic
         platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
         extra-arduino-cli-args: "--warnings default"
-        required-libraries: ArduinoJson,StreamUtils,ListLib
+        required-libraries: ArduinoJson,StreamUtils,PubSubClient,AceButton
