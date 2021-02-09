@@ -5,8 +5,6 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) February 2021
-
-    Example documented here > https://github.com/davidchatting/Approximate/tree/master#when-were-close-using-a-proximate-device-handler
 */
 
 #include <Approximate.h>
