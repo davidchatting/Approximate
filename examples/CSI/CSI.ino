@@ -26,6 +26,8 @@ void loop() {
 }
 
 void onChannelStateEvent(Channel *channel) {
-    Serial.println("onChannelStateEvent");
-    Serial.println(channel->getBssidAsString());
+    for(int n = 0; n < 128; ++n) {
+        Serial.printf("%i\t", channel->getBufferN(n));
+    }
+    Serial.println();
 }
