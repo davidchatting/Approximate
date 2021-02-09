@@ -21,5 +21,5 @@ jobs:
       with:
         arduino-board-fqbn: esp32:esp32:esp32
         platform-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-        extra-arduino-cli-args: "--warnings none"
-        required-libraries: ArduinoJson,StreamUtils
+        extra-arduino-cli-args: "--warnings default"
+        required-libraries: ArduinoJson,StreamUtils,PubSubClient
