@@ -1,8 +1,6 @@
 /*
     CSI example for the Approximate Library
     -
-    Find the MAC address of close by devices - and trigger ARRIVE & DEPART events
-    -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) February 2021
 */
