@@ -22,8 +22,10 @@ void loop() {
 }
 
 void onChannelStateEvent(Channel *channel) {
-    for(int n = 0; n < 128; ++n) {
-        Serial.printf("%i\t", channel->getBufferN(n));
+    int8_t a, bi; 
+    for(int n = -26; n <= 26; ++n) {
+        channel -> getSubCarrier(n, a, bi);
+        Serial.printf("[%i, %i]\t", a, bi);
     }
     Serial.println();
 }
