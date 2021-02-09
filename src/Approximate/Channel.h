@@ -23,6 +23,8 @@ class Channel : public Network {
 
         void setBuffer(int8_t *buf);
         int8_t getBufferN(int n);
+
+        void getSubCarrier(int n, int8_t &a, int8_t &bi);
 };
 
 #endif
