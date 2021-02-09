@@ -13,12 +13,13 @@
 #include "Approximate/eth_addr.h"
 #include "Approximate/wifi_pkt.h"
 
-#include "Approximate/PacketSniffer.h"
-#include "Approximate/Packet.h"
 #include "Approximate/ArpTable.h"
 #include "Approximate/Channel.h"
 #include "Approximate/Device.h"
 #include "Approximate/Filter.h"
+#include "Approximate/Network.h"
+#include "Approximate/Packet.h"
+#include "Approximate/PacketSniffer.h"
 
 #include <ListLib.h>              //https://github.com/luisllamasbinaburo/Arduino-List
 
