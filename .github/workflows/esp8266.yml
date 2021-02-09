@@ -22,4 +22,4 @@ jobs:
         arduino-board-fqbn: esp8266:esp8266:generic
         platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
         extra-arduino-cli-args: "--warnings default"
-        required-libraries: ArduinoJson,StreamUtils,PubSubClient
+        required-libraries: ArduinoJson,StreamUtils,PubSubClient,AceButton
