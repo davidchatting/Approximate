@@ -677,20 +677,6 @@ bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
   return(success);
 }
 
-// bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_csi_info_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
-//   bool success = false;
-
-//   Packet *packet = new Packet();
-//   if(wifi_promiscuous_pkt_to_Packet(wifi_pkt, payloadLengthBytes, packet)) {
-//       if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
-//         success = true;
-//       }
-//   }
-//   delete(packet);
-  
-//   return(success);
-// }
-
 bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device) {
   bool success = false;
 
@@ -740,6 +726,9 @@ bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *devi
       ArpTable::lookupIPAddress(device);
       success = true;
     }
+    else {
+      //not associated with this bssid - not on this network
+    }
   }
 
   return(success);
@@ -750,22 +739,16 @@ bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *chann
 
   #if defined(ESP32)
     if(info->len >= 128) {
-      eth_addr bssid;
-      uint8_t_to_eth_addr(info -> mac, bssid);
-      channel -> setBssid(bssid);
+      eth_addr thisBssid;
+      uint8_t_to_eth_addr(info -> mac, thisBssid);
 
-      /*
-      int8_t* my_ptr = info->buf;
-      // first number is the wifi channel
-      //Serial.printf("%d\t", WIFI_CHANNEL); //NO! This is buf[2]?
-      for(int i = 0; i < 128; i++) {
-        Serial.printf("%d\t", *my_ptr);
-        my_ptr++;
+      //Filter this network:
+      if(eth_addr_cmp(&thisBssid, &localBSSID)) {
+        channel -> setBssid(thisBssid);
+        channel -> setBuffer(info->buf);
+
+        success = true;
       }
-      Serial.print("\n");
-      */
-
-      success = true;
     }
   #endif
 
