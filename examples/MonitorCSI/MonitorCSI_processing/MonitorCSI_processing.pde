@@ -24,9 +24,9 @@ void draw() {
       if(csiPacket.length == 52) {
         for(int n = -26; n < 26; ++n) {
           CSIPoint p = new CSIPoint();
-          int a = int(split(csiPacket[n+26], ',')[1]);    //real
-          int bi = int(split(csiPacket[n+26], ',')[0]);   //imaginary
-          p.v = new PVector(bi, a);
+          int a = int(split(csiPacket[n+26], ',')[0]);    //real
+          int bi = int(split(csiPacket[n+26], ',')[1]);   //imaginary
+          p.v = new PVector(a, bi);
           p.subCarrier = n;
           
           sample[n+26] = p;
