@@ -1,3 +1,10 @@
+/*
+    Monitor CSI example for the Approximate Library (Processing client)
+    -
+    David Chatting - github.com/davidchatting/Approximate
+    MIT License - Copyright (c) February 2021
+*/
+
 import processing.serial.*;
 
 Serial esp32;
