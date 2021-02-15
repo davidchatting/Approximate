@@ -25,7 +25,7 @@ int8_t Channel::getBufferN(int n) {
 }
 
 void Channel::getSubCarrier(int n, int8_t &a, int8_t &bi) {
-    if(n >= -26 && n <= 26) {
+    if(n >= -26 && n < 26) {
         int index = (n>0) ? (n*2)+2 : 126+(n*2);
         a = buf[index + 1];
         bi = buf[index];
