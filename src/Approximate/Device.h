@@ -10,12 +10,12 @@
 #define Device_h
 
 #include <Arduino.h>
-#include "Channel.h"
+#include "Network.h"
 #include "eth_addr.h"
 
 #define APPROXIMATE_UNKNOWN_RSSI 0
 
-class Device : public Channel {
+class Device : public Network {
     private:
         eth_addr macAddress = {{0,0,0,0,0,0}};
         ip4_addr_t ipAddress;

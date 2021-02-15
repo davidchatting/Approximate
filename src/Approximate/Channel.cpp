@@ -12,41 +12,22 @@
 Channel::Channel() {
 }
 
-Channel::Channel(eth_addr &bssid, int channel) {
-    init(bssid, channel);
+void Channel::setBuffer(int8_t *buf) {
+    memcpy(this -> buf, buf, 128 * sizeof(int8_t));
 }
 
-void Channel::init(eth_addr &bssid, int channel) {
-    setBssid(bssid);
-    setChannel(channel);
+int8_t Channel::getBufferN(int n) {
+    int8_t result = 0;
+
+    if(n >= 0 && n < 128) result = buf[n];
+
+    return(result);
 }
 
-void Channel::getBssid(eth_addr &bssid) {
-     ETHADDR16_COPY(&bssid, &this -> bssid);
-}
-
-String Channel::getBssidAsString() {
-    String bssidAsString = "";
-
-    Approximate::eth_addr_to_String(bssid, bssidAsString);
-
-    return(bssidAsString);
-}
-
-char *Channel::getBssidAs_c_str(char *out) {
-    Approximate::eth_addr_to_c_str(bssid, out);
-    
-    return(out);
-}
-
-void Channel::setBssid(eth_addr &bssid) {
-    ETHADDR16_COPY(&this -> bssid, &bssid);
-}
-
-int Channel::getChannel() {
-    return(channel);
-}
-
-void Channel::setChannel(int channel) {
-    this -> channel = channel;
+void Channel::getSubCarrier(int n, int8_t &a, int8_t &bi) {
+    if(n >= -26 && n < 26) {
+        int index = (n>0) ? (n*2)+2 : 126+(n*2);
+        a = buf[index + 1];
+        bi = buf[index];
+    }
 }
