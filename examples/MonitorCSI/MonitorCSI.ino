@@ -1,5 +1,5 @@
 /*
-    CSI example for the Approximate Library
+    Monitor CSI example for the Approximate Library
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) February 2021
