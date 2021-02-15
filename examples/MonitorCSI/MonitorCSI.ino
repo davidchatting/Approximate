@@ -22,10 +22,10 @@ void loop() {
 }
 
 void onChannelStateEvent(Channel *channel) {
-    int8_t a, bi; 
-    for(int n = -26; n <= 26; ++n) {
-        channel -> getSubCarrier(n, a, bi);
-        Serial.printf("[%i, %i]\t", a, bi);
-    }
-    Serial.println();
+  int8_t a, bi; 
+  for(int n = -26; n < 26; ++n) {
+    channel -> getSubCarrier(n, a, bi);
+    Serial.printf("%i,%i\t", a, bi);
+  }
+  Serial.printf("\n");
 }
