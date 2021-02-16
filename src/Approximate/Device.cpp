@@ -169,7 +169,8 @@ bool Device::isUniversal() {
 }
 
 bool Device::isIndividual() {
-    return(!isGroup());
+    //sometimes there are junk mac addresses where the last half is all zeros
+    return(!isGroup() && !(macAddress.addr[3] == 0x0 && macAddress.addr[4] == 0x0 && macAddress.addr[5] == 0x0));
 }
 
 //Universal/local and individual/group defined by: https://standards.ieee.org/content/dam/ieee-standards/standards/web/documents/tutorials/macgrp.pdf
