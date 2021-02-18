@@ -23,9 +23,11 @@ void loop() {
 
 void onChannelStateEvent(Channel *channel) {
   int8_t a, bi; 
-  for(int n = -26; n < 26; ++n) {
-    channel -> getSubCarrier(n, a, bi);
-    Serial.printf("%i,%i\t", a, bi);
+  for(int n = -26; n <= 26; ++n) {
+    if(n!=0) {
+      channel -> getSubCarrier(n, a, bi);
+      Serial.printf("%i,%i\t", a, bi);
+    }
   }
   Serial.printf("\n");
 }
