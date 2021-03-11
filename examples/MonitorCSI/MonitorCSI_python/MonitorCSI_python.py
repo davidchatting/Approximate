@@ -36,7 +36,7 @@ if ser.is_open==True:
                 xs.append(n-26)                         #subcarrier
                 ys.append(np.linalg.norm(v))            #magnitude
 
-            # Limit x and y lists to 20 items
+            # Limit x and y lists to 52 items
             xs = xs[-52:]
             ys = ys[-52:]
 
