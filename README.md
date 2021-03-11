@@ -402,4 +402,4 @@ Significantly this example requires that not only a proximate device's MAC addre
 
 ## Author
 
-The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [Hack my House](http://davidchatting.com/hackmyhouse/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
+The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [A Network of One's Own](http://davidchatting.com/nooo/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
