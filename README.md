@@ -400,6 +400,11 @@ This is a further extension to the CloseBy example and again retains the same st
 
 Significantly this example requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled by setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called. However, this will cause an additional delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32 before the main program will operate. The ESP32 will periodically automatically refresh its ARP table, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
 
+## In Use
+
+Projects that use the Approximate library include:
+* [Three WiFi Meters](https://github.com/davidchatting/ThreeWiFiMeters)
+
 ## Author
 
 The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [A Network of One's Own](http://davidchatting.com/nooo/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
