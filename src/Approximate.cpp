@@ -507,26 +507,20 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
   Device *device = new Device();
   if(Approximate::wifi_promiscuous_pkt_to_Device(pkt, payloadLength, device)) {
     if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
-      if(proximateDeviceHandler && device -> getRSSI() < 0 && (device -> getRSSI() > proximateRSSIThreshold || isProximateDevice(device))) {
-        eth_addr macAddress;
-        device -> getMacAddress(macAddress);
+      if(proximateDeviceHandler) {
+        Device *proximateDevice = Approximate::getProximateDevice(device);
 
-        Device *proximateDevice = Approximate::getProximateDevice(macAddress);
-
-        if(!proximateDevice) {
-          //A new proximate device - not already in the list
-          proximateDevice = new Device(device);
-          proximateDeviceList.Add(proximateDevice);
-          proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
-        }
-        else {
+        if(proximateDevice) {
           //A known proximate device - already in the list
           if(proximateDevice -> getRSSI() > proximateRSSIThreshold) {
             proximateDevice->update(device);
           }
-          else {
-            Serial.printf("*%i\n", proximateDevice -> getRSSI());
-          }
+        }
+        else if(device -> getRSSI() != 0 && device -> getRSSI() > proximateRSSIThreshold) {
+          //A new proximate device - not already in the list
+          proximateDevice = new Device(device);
+          proximateDeviceList.Add(proximateDevice);
+          proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
         }
       }
 
@@ -594,6 +588,18 @@ bool Approximate::isProximateDevice(String macAddress) {
 
 bool Approximate::isProximateDevice(eth_addr &macAddress) {
   return(Approximate::getProximateDevice(macAddress));
+}
+
+Device *Approximate::getProximateDevice(Device *device) {
+  Device *proximateDevice = NULL;
+
+  if(device) {
+    eth_addr macAddress;
+    device -> getMacAddress(macAddress);
+    proximateDevice = getProximateDevice(macAddress);
+  }
+
+  return(proximateDevice);
 }
 
 Device *Approximate::getProximateDevice(eth_addr &macAddress) {
