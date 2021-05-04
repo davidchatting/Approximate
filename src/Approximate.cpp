@@ -507,8 +507,27 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
   Device *device = new Device();
   if(Approximate::wifi_promiscuous_pkt_to_Device(pkt, payloadLength, device)) {
     if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
-      if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
-        onProximateDevice(device);
+      if(proximateDeviceHandler && device -> getRSSI() < 0 && (device -> getRSSI() > proximateRSSIThreshold || isProximateDevice(device))) {
+        eth_addr macAddress;
+        device -> getMacAddress(macAddress);
+
+        Device *proximateDevice = Approximate::getProximateDevice(macAddress);
+
+        if(!proximateDevice) {
+          //A new proximate device - not already in the list
+          proximateDevice = new Device(device);
+          proximateDeviceList.Add(proximateDevice);
+          proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+        }
+        else {
+          //A known proximate device - already in the list
+          if(proximateDevice -> getRSSI() > proximateRSSIThreshold) {
+            proximateDevice->update(device);
+          }
+          else {
+            Serial.printf("*%i\n", proximateDevice -> getRSSI());
+          }
+        }
       }
 
       if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
@@ -534,26 +553,6 @@ void Approximate::parseChannelStateInformation(wifi_csi_info_t *info) {
       delete channel;
     }
   #endif
-}
-
-void Approximate::onProximateDevice(Device *d) {
-  if(d) {
-    eth_addr macAddress;
-    d -> getMacAddress(macAddress);
-
-    Device *proximateDevice = Approximate::getProximateDevice(macAddress);
-
-    if(!proximateDevice) {
-      //A new proximate device - not already in the list
-      proximateDevice = new Device(d);
-      proximateDeviceList.Add(proximateDevice);
-      proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
-    }
-    else {
-      //A known proximate device - already in the list
-      proximateDevice->update(d);
-    }
-  }
 }
 
 void Approximate::updateProximateDeviceList() {

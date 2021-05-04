@@ -107,7 +107,6 @@ class Approximate {
 
     static List<Device *> proximateDeviceList;
     static Device *getProximateDevice(eth_addr &macAddress);
-    static void onProximateDevice(Device *proximateDevice);
     static int proximateRSSIThreshold;
     static int proximateLastSeenTimeoutMs;
 
