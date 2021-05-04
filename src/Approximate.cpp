@@ -543,18 +543,15 @@ void Approximate::onProximateDevice(Device *d) {
 
     Device *proximateDevice = Approximate::getProximateDevice(macAddress);
 
-    if(proximateDevice) {
-      proximateDevice->update(d);
-
-      if(activeDeviceHandler) {
-        DeviceEvent event = proximateDevice -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
-        activeDeviceHandler(proximateDevice, event);
-      }
-    }
-    else {
+    if(!proximateDevice) {
+      //A new proximate device - not already in the list
       proximateDevice = new Device(d);
       proximateDeviceList.Add(proximateDevice);
       proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+    }
+    else {
+      //A known proximate device - already in the list
+      proximateDevice->update(d);
     }
   }
 }
@@ -570,11 +567,23 @@ void Approximate::updateProximateDeviceList() {
         proximateDeviceHandler(proximateDevice, Approximate::DEPART);
 
         proximateDeviceList.Remove(n);
-        n=0;
         delete proximateDevice;
+        n=0;
       }
     }
   }
+}
+
+bool Approximate::isProximateDevice(Device *device) {
+  bool result = false;
+
+  if(device) {
+    eth_addr macAddress_eth_addr;
+    device -> getMacAddress(macAddress_eth_addr);
+    result = Approximate::getProximateDevice(macAddress_eth_addr);
+  }
+
+  return(result);
 }
 
 bool Approximate::isProximateDevice(String macAddress) {
@@ -591,6 +600,7 @@ bool Approximate::isProximateDevice(eth_addr &macAddress) {
 Device *Approximate::getProximateDevice(eth_addr &macAddress) {
   Device *proximateDevice = NULL;
 
+  //Get known proximate device with this mac address:
   for (int n = 0; n < proximateDeviceList.Count() && !proximateDevice; n++) {
 		if(proximateDeviceList[n] -> matches(macAddress)) {
       proximateDevice = proximateDeviceList[n];
