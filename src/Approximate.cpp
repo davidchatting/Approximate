@@ -512,7 +512,7 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
 
         if(proximateDevice) {
           //A known proximate device - already in the list
-          if(proximateDevice -> getRSSI() > proximateRSSIThreshold) {
+          if(device -> getRSSI() > proximateRSSIThreshold) {
             proximateDevice->update(device);
           }
         }
