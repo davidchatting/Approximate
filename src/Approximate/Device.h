@@ -20,20 +20,20 @@ class Device : public Network {
         eth_addr macAddress = {{0,0,0,0,0,0}};
         ip4_addr_t ipAddress;
         int rssi = APPROXIMATE_UNKNOWN_RSSI;
-        long lastSeenInRangeAtMs = -1;
+        long lastSeenAtMs = -1;
         int dataFlowBytes = 0;  //uploading is negative, downloading positive
 
     public:
         Device();
         Device(Device *b);
-        Device(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi = APPROXIMATE_UNKNOWN_RSSI, long lastSeenInRangeAtMs = -1, int bytesFlow = 0, u32_t ipAddress = IPADDR_ANY);
+        Device(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi = APPROXIMATE_UNKNOWN_RSSI, long lastSeenAtMs = -1, int bytesFlow = 0, u32_t ipAddress = IPADDR_ANY);
 
         //TODO: tidy-up these operators and matches()
         bool operator ==(Device *b);
         bool operator ==(Device const& b);
         bool operator ==(eth_addr &macAddress);
 
-        void init(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenInRangeAtMs, int bytesFlow, u32_t ipAddress = IPADDR_ANY);
+        void init(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenAtMs, int bytesFlow, u32_t ipAddress = IPADDR_ANY);
         void update(Device *d);
 
         void getMacAddress(eth_addr &macAddress);
@@ -51,8 +51,8 @@ class Device : public Network {
         void setRSSI(int rssi);
         int getRSSI();
 
-        void setLastSeenInRangeAtMs(long lastSeenInRangeAtMs = -1);
-        int getLastSeenInRangeAtMs();
+        void setLastSeenAtMs(long lastSeenAtMs = -1);
+        int getLastSeenAtMs();
 
         bool matches(eth_addr &macAddress);
 

@@ -556,7 +556,7 @@ void Approximate::updateProximateDeviceList() {
     for (int n = 0; n < proximateDeviceList.Count(); n++) {
       proximateDevice = proximateDeviceList[n];
 
-      if((millis() - proximateDevice -> getLastSeenInRangeAtMs()) > proximateLastSeenTimeoutMs) {
+      if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
         proximateDeviceHandler(proximateDevice, Approximate::DEPART);
 
         proximateDeviceList.Remove(n);

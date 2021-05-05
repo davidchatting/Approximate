@@ -14,11 +14,11 @@ Device::Device() {
 }
 
 Device::Device(Device *b) {
-    init(b -> macAddress, b -> bssid, b -> channel, b -> rssi, b -> lastSeenInRangeAtMs, b -> dataFlowBytes, b -> ipAddress.addr);
+    init(b -> macAddress, b -> bssid, b -> channel, b -> rssi, b -> lastSeenAtMs, b -> dataFlowBytes, b -> ipAddress.addr);
 }
 
-Device::Device(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenInRangeAtMs, int dataFlowBytes, u32_t ipAddress) {
-    init(macAddress, bssid, channel, rssi, lastSeenInRangeAtMs, dataFlowBytes, ipAddress);
+Device::Device(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenAtMs, int dataFlowBytes, u32_t ipAddress) {
+    init(macAddress, bssid, channel, rssi, lastSeenAtMs, dataFlowBytes, ipAddress);
 }
 
 //TODO: tidy-up these operators and matches()
@@ -34,20 +34,20 @@ bool Device::operator ==(eth_addr &macAddress) {
     return(matches(macAddress));
 }
 
-void Device::init(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenInRangeAtMs, int dataFlowBytes, u32_t ipAddress) {
+void Device::init(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenAtMs, int dataFlowBytes, u32_t ipAddress) {
     setMacAddress(macAddress);
     setBssid(bssid);
     
     setChannel(channel);
     setRSSI(rssi);
-    setLastSeenInRangeAtMs(lastSeenInRangeAtMs);
+    setLastSeenAtMs(lastSeenAtMs);
     setDataFlowBytes(dataFlowBytes);
 
     setIPAddress(ipAddress);
 }
 
 void Device::update(Device *d) {
-    if(d) init(d -> macAddress, d -> bssid, d -> channel, d -> rssi, d -> lastSeenInRangeAtMs, d -> dataFlowBytes, d -> ipAddress.addr);
+    if(d) init(d -> macAddress, d -> bssid, d -> channel, d -> rssi, d -> lastSeenAtMs, d -> dataFlowBytes, d -> ipAddress.addr);
 }
 
 void Device::getMacAddress(eth_addr &macAddress) {
@@ -115,13 +115,13 @@ int Device::getRSSI() {
     return(rssi);
 }
 
-void Device::setLastSeenInRangeAtMs(long lastSeenInRangeAtMs) {
-    if(lastSeenInRangeAtMs == -1) lastSeenInRangeAtMs = millis(); 
-    this -> lastSeenInRangeAtMs = lastSeenInRangeAtMs;
+void Device::setLastSeenAtMs(long lastSeenAtMs) {
+    if(lastSeenAtMs == -1) lastSeenAtMs = millis(); 
+    this -> lastSeenAtMs = lastSeenAtMs;
 }
 
-int Device::getLastSeenInRangeAtMs() {
-    return(lastSeenInRangeAtMs);
+int Device::getLastSeenAtMs() {
+    return(lastSeenAtMs);
 }
 
 bool Device::matches(eth_addr &macAddress) {
