@@ -23,6 +23,8 @@ class Device : public Network {
         long lastSeenAtMs = -1;
         int dataFlowBytes = 0;  //uploading is negative, downloading positive
 
+        long timeOutAtMs = -1;
+
     public:
         Device();
         Device(Device *b);
@@ -49,10 +51,14 @@ class Device : public Network {
         bool hasIPAddress();
 
         void setRSSI(int rssi);
-        int getRSSI();
+        int getRSSI(bool uploadOnly = true);
 
         void setLastSeenAtMs(long lastSeenAtMs = -1);
         int getLastSeenAtMs();
+
+        void setTimeOutAtMs(long timeOutAtMs);
+        void setReducedTimeOutAtMs(long timeOutAtMs);
+        bool hasTimedOut();
 
         bool matches(eth_addr &macAddress);
 

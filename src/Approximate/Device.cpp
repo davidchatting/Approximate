@@ -111,7 +111,12 @@ void Device::setRSSI(int rssi) {
     this -> rssi = rssi;
 }
 
-int Device::getRSSI() {
+int Device::getRSSI(bool uploadOnly) {
+    int result = APPROXIMATE_UNKNOWN_RSSI;
+    
+    if(uploadOnly) result = isUploading() ? rssi : APPROXIMATE_UNKNOWN_RSSI;
+    else result = rssi;
+
     return(rssi);
 }
 
@@ -122,6 +127,18 @@ void Device::setLastSeenAtMs(long lastSeenAtMs) {
 
 int Device::getLastSeenAtMs() {
     return(lastSeenAtMs);
+}
+
+void Device::setTimeOutAtMs(long timeOutAtMs) {
+    this -> timeOutAtMs = timeOutAtMs;
+}
+
+void Device::setReducedTimeOutAtMs(long timeOutAtMs) {
+    setTimeOutAtMs(min(timeOutAtMs, this -> timeOutAtMs));
+}
+
+bool Device::hasTimedOut() {
+    return(millis() > timeOutAtMs || timeOutAtMs == -1);
 }
 
 bool Device::matches(eth_addr &macAddress) {
