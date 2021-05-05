@@ -509,19 +509,30 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
     if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
       if(proximateDeviceHandler) {
         Device *proximateDevice = Approximate::getProximateDevice(device);
+        int rssi = device -> getRSSI();
 
-        if(proximateDevice) {
-          //A known proximate device - already in the list
-          if(device -> getRSSI() > proximateRSSIThreshold) {
+        if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
+          if(proximateDevice) {
+            //A known proximate device - already in the list
             proximateDevice->update(device);
+
+            if(rssi > (proximateRSSIThreshold * 0.9f)) {
+              proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+            }
+            else {
+              proximateDevice -> setReducedTimeOutAtMs(millis() + (proximateLastSeenTimeoutMs * 0.2f));
+            }
+          }
+          else if(rssi > proximateRSSIThreshold) {
+            //A new proximate device - not already in the list
+            proximateDevice = new Device(device);
+            proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+
+            proximateDeviceList.Add(proximateDevice);
+            proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
           }
         }
-        else if(device -> getRSSI() != 0 && device -> getRSSI() > proximateRSSIThreshold) {
-          //A new proximate device - not already in the list
-          proximateDevice = new Device(device);
-          proximateDeviceList.Add(proximateDevice);
-          proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
-        }
+        
       }
 
       if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
@@ -556,7 +567,7 @@ void Approximate::updateProximateDeviceList() {
     for (int n = 0; n < proximateDeviceList.Count(); n++) {
       proximateDevice = proximateDeviceList[n];
 
-      if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
+      if(proximateDevice -> hasTimedOut()) {
         proximateDeviceHandler(proximateDevice, Approximate::DEPART);
 
         proximateDeviceList.Remove(n);
