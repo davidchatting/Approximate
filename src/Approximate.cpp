@@ -507,8 +507,29 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
   Device *device = new Device();
   if(Approximate::wifi_promiscuous_pkt_to_Device(pkt, payloadLength, device)) {
     if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
-      if(proximateDeviceHandler && device -> getRSSI() < 0 && device -> getRSSI() > proximateRSSIThreshold) {
-        onProximateDevice(device);
+      if(proximateDeviceHandler) {
+        Device *proximateDevice = Approximate::getProximateDevice(device);
+        int rssi = device -> getRSSI();
+
+        if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
+          if(proximateDevice) {
+            //A known proximate device - already in the list
+            proximateDevice->update(device);
+
+            if(rssi > proximateRSSIThreshold) {
+              proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+            }
+          }
+          else if(rssi > proximateRSSIThreshold) {
+            //A new proximate device - not already in the list
+            proximateDevice = new Device(device);
+            proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+
+            proximateDeviceList.Add(proximateDevice);
+            proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+          }
+        }
+        
       }
 
       if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
@@ -536,29 +557,6 @@ void Approximate::parseChannelStateInformation(wifi_csi_info_t *info) {
   #endif
 }
 
-void Approximate::onProximateDevice(Device *d) {
-  if(d) {
-    eth_addr macAddress;
-    d -> getMacAddress(macAddress);
-
-    Device *proximateDevice = Approximate::getProximateDevice(macAddress);
-
-    if(proximateDevice) {
-      proximateDevice->update(d);
-
-      if(activeDeviceHandler) {
-        DeviceEvent event = proximateDevice -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
-        activeDeviceHandler(proximateDevice, event);
-      }
-    }
-    else {
-      proximateDevice = new Device(d);
-      proximateDeviceList.Add(proximateDevice);
-      proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
-    }
-  }
-}
-
 void Approximate::updateProximateDeviceList() {
   if(packetSniffer && packetSniffer -> isRunning() && proximateLastSeenTimeoutMs > 0) {
     //only update if we have the possibility of new observations
@@ -566,15 +564,27 @@ void Approximate::updateProximateDeviceList() {
     for (int n = 0; n < proximateDeviceList.Count(); n++) {
       proximateDevice = proximateDeviceList[n];
 
-      if((millis() - proximateDevice -> getLastSeenAtMs()) > proximateLastSeenTimeoutMs) {
+      if(proximateDevice -> hasTimedOut()) {
         proximateDeviceHandler(proximateDevice, Approximate::DEPART);
 
         proximateDeviceList.Remove(n);
-        n=0;
         delete proximateDevice;
+        n=0;
       }
     }
   }
+}
+
+bool Approximate::isProximateDevice(Device *device) {
+  bool result = false;
+
+  if(device) {
+    eth_addr macAddress_eth_addr;
+    device -> getMacAddress(macAddress_eth_addr);
+    result = Approximate::getProximateDevice(macAddress_eth_addr);
+  }
+
+  return(result);
 }
 
 bool Approximate::isProximateDevice(String macAddress) {
@@ -588,9 +598,22 @@ bool Approximate::isProximateDevice(eth_addr &macAddress) {
   return(Approximate::getProximateDevice(macAddress));
 }
 
+Device *Approximate::getProximateDevice(Device *device) {
+  Device *proximateDevice = NULL;
+
+  if(device) {
+    eth_addr macAddress;
+    device -> getMacAddress(macAddress);
+    proximateDevice = getProximateDevice(macAddress);
+  }
+
+  return(proximateDevice);
+}
+
 Device *Approximate::getProximateDevice(eth_addr &macAddress) {
   Device *proximateDevice = NULL;
 
+  //Get known proximate device with this mac address:
   for (int n = 0; n < proximateDeviceList.Count() && !proximateDevice; n++) {
 		if(proximateDeviceList[n] -> matches(macAddress)) {
       proximateDevice = proximateDeviceList[n];

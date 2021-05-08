@@ -106,8 +106,8 @@ class Approximate {
     static bool applyDeviceFilters(Device *device);
 
     static List<Device *> proximateDeviceList;
+    static Device *getProximateDevice(Device *device);
     static Device *getProximateDevice(eth_addr &macAddress);
-    static void onProximateDevice(Device *proximateDevice);
     static int proximateRSSIThreshold;
     static int proximateLastSeenTimeoutMs;
 
@@ -156,8 +156,9 @@ class Approximate {
     void setLocalBSSID(String macAddress);
     void setLocalBSSID(eth_addr &macAddress);
 
-    bool isProximateDevice(String macAddress);
-    bool isProximateDevice(eth_addr &macAddress);
+    static bool isProximateDevice(Device *device);
+    static bool isProximateDevice(String macAddress);
+    static bool isProximateDevice(eth_addr &macAddress);
 
     void setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive = true);
     void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);
