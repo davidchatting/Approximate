@@ -516,11 +516,8 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
             //A known proximate device - already in the list
             proximateDevice->update(device);
 
-            if(rssi > (proximateRSSIThreshold * 0.9f)) {
+            if(rssi > proximateRSSIThreshold) {
               proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
-            }
-            else {
-              proximateDevice -> setReducedTimeOutAtMs(millis() + (proximateLastSeenTimeoutMs * 0.2f));
             }
           }
           else if(rssi > proximateRSSIThreshold) {
