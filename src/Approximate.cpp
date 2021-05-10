@@ -512,29 +512,29 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
         int rssi = device -> getRSSI();
 
         if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
-          if(proximateDevice) {
-            //A known proximate device - already in the list
-            proximateDevice->update(device);
-
-            if(rssi > proximateRSSIThreshold) {
-              proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+          if(rssi > proximateRSSIThreshold) {
+            if(proximateDevice) {
+              //A known proximate device - already in the list
+              proximateDevice->update(device);
             }
-          }
-          else if(rssi > proximateRSSIThreshold) {
-            //A new proximate device - not already in the list
-            proximateDevice = new Device(device);
-            proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+            else {
+              //A new proximate device - not already in the list
+              proximateDevice = new Device(device);
 
-            proximateDeviceList.Add(proximateDevice);
-            proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+              proximateDeviceList.Add(proximateDevice);
+              proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+            }
+            proximateDeviceHandler(proximateDevice, proximateDevice -> isUploading() ? Approximate::SEND : Approximate::RECEIVE);
+            proximateDevice -> setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+          }
+          else {
+            if(proximateDevice) proximateDevice->update(device);
           }
         }
-        
       }
 
       if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
-        DeviceEvent event = device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE;
-        activeDeviceHandler(device, event); 
+        activeDeviceHandler(device, device -> isUploading() ? Approximate::SEND : Approximate::RECEIVE); 
       }
     }
   }
