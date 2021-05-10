@@ -1,6 +1,5 @@
 ![esp8266](https://github.com/davidchatting/Approximate/workflows/esp8266/badge.svg)
 ![esp32](https://github.com/davidchatting/Approximate/workflows/esp32/badge.svg)
-![Downloads](https://img.shields.io/github/downloads/davidchatting/Approximate/total)
 
 # The Approximate Library
 The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Library for building proximate interactions between your Internet of Things and the [ESP8266](https://en.wikipedia.org/wiki/ESP8266) or [ESP32](https://en.wikipedia.org/wiki/ESP32), perhaps a switch that operates the nearest lamp or a song that plays when you (and your phone) come home.
@@ -25,7 +24,7 @@ In addition, the following libraries are also required:
 * ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
 
 ## Limitations
-Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology. This means that devices that are connected to a 5GHz WiFi network will be invisible to this library.
+Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology. This means that devices that are connected to a 5GHz WiFi network will be invisible to this library. Approximate will not work as expected where [MAC address randomisation](https://support.apple.com/en-gb/guide/security/secb9cb3140c/web) is enabled - the default iOS setting.
 
 ## Examples
 This section describes in some technical detail each of the examples available from the `Examples` menu once Approximate is correctly installed.
@@ -89,7 +88,7 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 }
 ```
 
-This example uses a Proximate Device Handler. The `onProximateDevice()` callback function receives both a pointer to a `Device` and a `DeviceEvent` for each new observation - in this example the events `ARRIVE` and `DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out and the state indicated via the LED. MAC addresses are the primary way in which the Approximate library identifies network devices.
+This example uses a Proximate Device Handler. The `onProximateDevice()` callback function receives both a pointer to a `Device` and a `DeviceEvent` for each new observation - in this example the events `ARRIVE` and `DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out and the state to be indicated via the LED. MAC addresses are the primary way in which the Approximate library identifies network devices.
 
 There are four event types that a `DeviceHandler` will encounter: 
 
@@ -404,6 +403,7 @@ Significantly this example requires that not only a proximate device's MAC addre
 
 Projects that use the Approximate library include:
 * [Three WiFi Meters](https://github.com/davidchatting/ThreeWiFiMeters)
+* [Proximate Sonoff switch](https://www.youtube.com/watch?v=cXh0T1CWtyg)
 
 ## Author
 
