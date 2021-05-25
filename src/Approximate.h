@@ -184,6 +184,7 @@ class Approximate {
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
     static bool eth_addr_to_c_str(eth_addr &in, char *out);
+    static bool MacAddr_to_c_str(MacAddr *in, char *out);
 };
 
 #endif

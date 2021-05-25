@@ -700,6 +700,14 @@ bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
   return(success);
 }
 
+bool Approximate::MacAddr_to_c_str(MacAddr *in, char *out) {
+  bool success = true;
+
+  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in->mac[0], in->mac[1], in->mac[2], in->mac[3], in->mac[4], in->mac[5]);
+
+  return(success);
+}
+
 bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device) {
   bool success = false;
 
