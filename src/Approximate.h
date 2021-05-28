@@ -60,6 +60,7 @@ class Approximate {
 
   private:
     static bool running;
+    static bool onlyIndividualDevices;
 
     static PacketSniffer *packetSniffer;
     static ArpTable *arpTable;
@@ -68,7 +69,7 @@ class Approximate {
     char *password = new char[64];
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
-    bool init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled);
+    bool init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
 
     //TODO: template this?
@@ -121,8 +122,8 @@ class Approximate {
 
   public:
     Approximate();
-    bool init();
-    bool init(String ssid, String password, bool ipAddressResolution = false, bool csiEnabled = false);
+    bool init(bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true);
+    bool init(String ssid, String password, bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true);
 
     void begin(voidFnPtr thenFnPtr = NULL);
     void end();
@@ -184,6 +185,7 @@ class Approximate {
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
     static bool eth_addr_to_c_str(eth_addr &in, char *out);
+    static bool MacAddr_to_c_str(MacAddr *in, char *out);
 };
 
 #endif

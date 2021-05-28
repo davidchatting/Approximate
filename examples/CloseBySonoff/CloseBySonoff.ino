@@ -102,9 +102,10 @@ void switchCloseBySonoff(bool switchState) {
   if(closeBySonoff) {
     approx.onceWifiStatus(WL_CONNECTED, [](bool switchState) {
       if(closeBySonoff) {
+        WiFiClient client;
         HTTPClient http;
         String url = "http://" + closeBySonoff->getIPAddressAsString() + ":8081/zeroconf/switch";
-        http.begin(url);
+        http.begin(client, url);
         http.addHeader("Content-Type", "application/json");
       
         String switchValue = switchState?"on":"off";

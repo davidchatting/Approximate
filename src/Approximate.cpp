@@ -9,6 +9,7 @@
 #include "Approximate.h"
 
 bool Approximate::running = false;
+bool Approximate::onlyIndividualDevices = true;
 
 PacketSniffer *Approximate::packetSniffer = PacketSniffer::getInstance();
 ArpTable *Approximate::arpTable = NULL;
@@ -32,14 +33,14 @@ Approximate::Approximate() {
   uint8_t_to_eth_addr(ma, ownMacAddress);
 }
 
-bool Approximate::init() {
+bool Approximate::init(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = false;
 
   if(WiFi.status() == WL_CONNECTED) {
     strcpy(this->ssid, WiFi.SSID().c_str());
     strcpy(this->password, WiFi.psk().c_str());
 
-    if(init(WiFi.channel(), WiFi.BSSID(), /*ipAddressResolution*/ false, /*csiEnabled*/ false)) {
+    if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
       success = true;
     }
   }
@@ -47,7 +48,7 @@ bool Approximate::init() {
   return(success);
 }
 
-bool Approximate::init(String ssid, String password, bool ipAddressResolution, bool csiEnabled) {
+bool Approximate::init(String ssid, String password, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = false;
 
   int n = WiFi.scanNetworks();
@@ -58,7 +59,7 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution, b
         strcpy(this->ssid, ssid.c_str());
         strcpy(this->password, password.c_str());
 
-        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled)) {
+        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
           success = true;
         }
       }
@@ -68,7 +69,7 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution, b
   return(success);
 }
 
-bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled) {
+bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = true;
 
   WiFi.disconnect();
@@ -79,6 +80,7 @@ bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bo
   packetSniffer -> init(channel);
   packetSniffer -> setPacketEventHandler(parsePacket);
   if(csiEnabled) packetSniffer -> setChannelEventHandler(parseChannelStateInformation);
+  this -> onlyIndividualDevices = onlyIndividualDevices;
 
   eth_addr networkBSSID; 
   uint8_t_to_eth_addr(bssid, networkBSSID);
@@ -506,7 +508,7 @@ void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *pkt) {
 void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength) {
   Device *device = new Device();
   if(Approximate::wifi_promiscuous_pkt_to_Device(pkt, payloadLength, device)) {
-    if(device -> isIndividual() && !device -> matches(ownMacAddress)) {
+    if(!device -> matches(ownMacAddress) && (!onlyIndividualDevices || device -> isIndividual())) {
       if(proximateDeviceHandler) {
         Device *proximateDevice = Approximate::getProximateDevice(device);
         int rssi = device -> getRSSI();
@@ -696,6 +698,14 @@ bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
   bool success = true;
 
   sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
+
+  return(success);
+}
+
+bool Approximate::MacAddr_to_c_str(MacAddr *in, char *out) {
+  bool success = true;
+
+  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in->mac[0], in->mac[1], in->mac[2], in->mac[3], in->mac[4], in->mac[5]);
 
   return(success);
 }
