@@ -728,16 +728,22 @@ bool Approximate::wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_pk
   bool success = false;
 
   if(wifi_pkt && packet) {
-    wifi_mgmt_hdr* header = (wifi_mgmt_hdr*)wifi_pkt -> payload;
-    MacAddr_to_eth_addr(&header -> sa, packet -> src);
-    MacAddr_to_eth_addr(&header -> da, packet -> dst);
-    MacAddr_to_eth_addr(&header -> bssid, packet -> bssid);
-
     packet -> rssi = wifi_pkt -> rx_ctrl.rssi;
     packet -> channel = wifi_pkt -> rx_ctrl.channel;
     packet -> payloadLengthBytes = payloadLengthBytes;
 
-    success = true;
+    if(wifi_pkt -> rx_ctrl.sig_mode == 0) {
+      //Has a 802.11 header
+      wifi_mgmt_hdr* header = (wifi_mgmt_hdr*)wifi_pkt -> payload;
+      MacAddr_to_eth_addr(&header -> sa, packet -> src);
+      MacAddr_to_eth_addr(&header -> da, packet -> dst);
+      MacAddr_to_eth_addr(&header -> bssid, packet -> bssid);
+
+      success = true;
+    }
+    else {
+      ///Has a 802.11n header
+    }
   }
 
   return(success);
