@@ -710,6 +710,14 @@ bool Approximate::MacAddr_to_c_str(MacAddr *in, char *out) {
   return(success);
 }
 
+bool Approximate::MacAddr_to_c_oui(MacAddr *in, int &out) {
+  bool success = true;
+
+  out = ((in->mac[0] << 16) & 0xFF0000) | ((in->mac[1] << 8) & 0xFF00) | ((in->mac[2] << 0) & 0xFF);
+
+  return(success);
+}
+
 bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device) {
   bool success = false;
 
@@ -737,7 +745,7 @@ bool Approximate::wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_pk
       wifi_mgmt_hdr* header = (wifi_mgmt_hdr*)wifi_pkt -> payload;
       MacAddr_to_eth_addr(&header -> sa, packet -> src);
       MacAddr_to_eth_addr(&header -> da, packet -> dst);
-      MacAddr_to_eth_addr(&header -> bssid, packet -> bssid);
+      //MacAddr_to_eth_addr(&header -> bssid, packet -> bssid);
 
       success = true;
     }
