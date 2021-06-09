@@ -21,8 +21,16 @@
   #define ETHADDR16_COPY(src, dst)  SMEMCPY(src, dst, ETHARP_HWADDR_LEN)
 #endif
 
-typedef struct {
+struct __attribute__((packed)) MacAddr {
   uint8_t mac[6];
-} __attribute__((packed)) MacAddr;
+
+  bool operator==(const MacAddr& rhs) {
+    bool result = true;
+
+    for(int n=0; n < 6 && result; ++n) result = (mac[n] == rhs.mac[n]);
+
+    return result;
+  }
+};
 
 #endif
