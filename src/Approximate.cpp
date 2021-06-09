@@ -718,6 +718,14 @@ bool Approximate::MacAddr_to_c_oui(MacAddr *in, int &out) {
   return(success);
 }
 
+bool Approximate::MacAddr_to_MacAddr(MacAddr *in, MacAddr &out) {
+  bool success = true;
+
+  for(int n=0; n<6; ++n) out.mac[n] = in -> mac[n];
+
+  return(success);
+}
+
 bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device) {
   bool success = false;
 
