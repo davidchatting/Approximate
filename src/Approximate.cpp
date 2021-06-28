@@ -710,7 +710,7 @@ bool Approximate::MacAddr_to_c_str(MacAddr *in, char *out) {
   return(success);
 }
 
-bool Approximate::MacAddr_to_c_oui(MacAddr *in, int &out) {
+bool Approximate::MacAddr_to_oui(MacAddr *in, int &out) {
   bool success = true;
 
   out = ((in->mac[0] << 16) & 0xFF0000) | ((in->mac[1] << 8) & 0xFF00) | ((in->mac[2] << 0) & 0xFF);
