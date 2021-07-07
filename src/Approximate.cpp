@@ -33,43 +33,33 @@ Approximate::Approximate() {
   uint8_t_to_eth_addr(ma, ownMacAddress);
 }
 
-bool Approximate::init(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
-  bool success = false;
-
-  if(WiFi.status() == WL_CONNECTED) {
-    strcpy(this->ssid, WiFi.SSID().c_str());
-    strcpy(this->password, WiFi.psk().c_str());
-
-    if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
-      success = true;
-    }
-  }
-
-  return(success);
-}
-
 bool Approximate::init(String ssid, String password, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = false;
 
-  int n = WiFi.scanNetworks();
-  for (int i = 0; i < n && !success; ++i) {
-    if(WiFi.SSID(i) == ssid) {
-      if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
-        //Network is either open or a password is supplied
-        strcpy(this->ssid, ssid.c_str());
-        strcpy(this->password, password.c_str());
+  if(ssid.length() > 0) {
+    int n = WiFi.scanNetworks();
+    for (int i = 0; i < n && !success; ++i) {
+      if(WiFi.SSID(i) == ssid) {
+        if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
+          //Network is either open or a password is supplied
+          strcpy(this->ssid, ssid.c_str());
+          strcpy(this->password, password.c_str());
 
-        if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
-          success = true;
+          if(initBlind(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
+            success = true;
+          }
         }
       }
     }
   }
-
+  else {
+    success = initBlind(ipAddressResolution, csiEnabled, onlyIndividualDevices);
+  }
+  
   return(success);
 }
 
-bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
+bool Approximate::initBlind(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = true;
 
   WiFi.disconnect();
@@ -91,6 +81,21 @@ bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bo
   Serial.printf("\n-\nRouter: %s\t\tChannel: %i\n-\n", networkBSSIDAsString.c_str(), channel);
 
   if(ipAddressResolution) arpTable = ArpTable::getInstance();
+
+  return(success);
+}
+
+bool Approximate::initBlind(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
+  bool success = false;
+
+  if(WiFi.status() == WL_CONNECTED) {
+    strcpy(this->ssid, WiFi.SSID().c_str());
+    strcpy(this->password, WiFi.psk().c_str());
+
+    if(initBlind(WiFi.channel(), WiFi.BSSID(), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
+      success = true;
+    }
+  }
 
   return(success);
 }
@@ -231,7 +236,7 @@ wl_status_t Approximate::connectWiFi() {
 }
 
 wl_status_t Approximate::connectWiFi(String ssid, String password) {
-  connectWiFi(ssid.c_str(), password.c_str());
+  return(connectWiFi(ssid.c_str(), password.c_str()));
 }
 
 wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
@@ -298,10 +303,10 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
         }
         
       #endif
-
-      return(WiFi.status());
     }
   }
+
+  return(WiFi.status());
 }
 
 void Approximate::disconnectWiFi() {
