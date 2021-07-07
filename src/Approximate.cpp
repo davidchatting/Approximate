@@ -236,7 +236,7 @@ wl_status_t Approximate::connectWiFi() {
 }
 
 wl_status_t Approximate::connectWiFi(String ssid, String password) {
-  connectWiFi(ssid.c_str(), password.c_str());
+  return(connectWiFi(ssid.c_str(), password.c_str()));
 }
 
 wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
