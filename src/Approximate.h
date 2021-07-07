@@ -70,6 +70,7 @@ class Approximate {
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
     bool init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
+    bool initBlind(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
 
     //TODO: template this?
@@ -122,7 +123,6 @@ class Approximate {
 
   public:
     Approximate();
-    bool init(bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true);
     bool init(String ssid, String password, bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true);
 
     void begin(voidFnPtr thenFnPtr = NULL);
