@@ -305,7 +305,7 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
       #endif
     }
   }
-  
+
   return(WiFi.status());
 }
 
@@ -520,8 +520,6 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
 
         if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
           if(rssi > proximateRSSIThreshold) {
-            Serial.print(".");
-
             if(proximateDevice) {
               //A known proximate device - already in the list
               proximateDevice->update(device);
