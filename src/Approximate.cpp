@@ -303,10 +303,10 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
         }
         
       #endif
-
-      return(WiFi.status());
     }
   }
+  
+  return(WiFi.status());
 }
 
 void Approximate::disconnectWiFi() {
