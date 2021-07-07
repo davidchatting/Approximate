@@ -36,7 +36,7 @@ Approximate::Approximate() {
 bool Approximate::init(String ssid, String password, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = false;
 
-  if(ssid) {
+  if(ssid.length() > 0) {
     int n = WiFi.scanNetworks();
     for (int i = 0; i < n && !success; ++i) {
       if(WiFi.SSID(i) == ssid) {
@@ -45,21 +45,21 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution, b
           strcpy(this->ssid, ssid.c_str());
           strcpy(this->password, password.c_str());
 
-          if(init(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
+          if(initBlind(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
             success = true;
           }
         }
       }
     }
   }
-  else if(!ssid && !password) {
+  else {
     success = initBlind(ipAddressResolution, csiEnabled, onlyIndividualDevices);
   }
   
   return(success);
 }
 
-bool Approximate::init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
+bool Approximate::initBlind(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices) {
   bool success = true;
 
   WiFi.disconnect();
@@ -92,7 +92,7 @@ bool Approximate::initBlind(bool ipAddressResolution, bool csiEnabled, bool only
     strcpy(this->ssid, WiFi.SSID().c_str());
     strcpy(this->password, WiFi.psk().c_str());
 
-    if(init(WiFi.channel(), WiFi.BSSID(), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
+    if(initBlind(WiFi.channel(), WiFi.BSSID(), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
       success = true;
     }
   }
@@ -520,6 +520,8 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadL
 
         if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
           if(rssi > proximateRSSIThreshold) {
+            Serial.print(".");
+
             if(proximateDevice) {
               //A known proximate device - already in the list
               proximateDevice->update(device);

@@ -69,7 +69,7 @@ class Approximate {
     char *password = new char[64];
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
-    bool init(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
+    bool initBlind(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     bool initBlind(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
 
