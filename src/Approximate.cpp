@@ -746,28 +746,31 @@ bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, ui
 }
 
 bool Approximate::wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Packet *packet) {
-  bool success = false;
+  bool success = true;
 
   if(wifi_pkt && packet) {
-    packet -> rssi = wifi_pkt -> rx_ctrl.rssi;
-    packet -> channel = wifi_pkt -> rx_ctrl.channel;
-    packet -> payloadLengthBytes = payloadLengthBytes;
-
-    if(wifi_pkt -> rx_ctrl.sig_mode == 0) {
-      //Has a 802.11 header
-      wifi_mgmt_hdr* header = (wifi_mgmt_hdr*)wifi_pkt -> payload;
-      MacAddr_to_eth_addr(&header -> sa, packet -> src);
-      MacAddr_to_eth_addr(&header -> da, packet -> dst);
-      //MacAddr_to_eth_addr(&header -> bssid, packet -> bssid);
-
-      success = true;
-    }
-    else {
-      ///Has a 802.11n header
+    switch (wifi_pkt -> rx_ctrl.sig_mode) {
+      case 0:   wifi_11bg_pkt_to_Packet(wifi_pkt, payloadLengthBytes, packet); break;
+      case 1:   wifi_11n_pkt_to_Packet(wifi_pkt, payloadLengthBytes, packet); break;
+      default:  success = false;
     }
   }
 
   return(success);
+}
+
+void Approximate::wifi_11bg_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt, uint16_t payloadLengthBytes, Packet *packet) {
+  packet -> rssi = wifi_11bg_pkt -> rx_ctrl.rssi;
+  packet -> channel = wifi_11bg_pkt -> rx_ctrl.channel;
+  packet -> payloadLengthBytes = payloadLengthBytes;
+
+  //802.11bg packet
+  wifi_mgmt_hdr* header = (wifi_mgmt_hdr*) wifi_11bg_pkt -> payload;
+  MacAddr_to_eth_addr(&(header -> sa), packet -> src);
+  MacAddr_to_eth_addr(&(header -> da), packet -> dst);
+}
+
+void Approximate::wifi_11n_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11n_pkt, uint16_t payloadLengthBytes, Packet *packet) {
 }
 
 bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device) {
