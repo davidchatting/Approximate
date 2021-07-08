@@ -765,12 +765,20 @@ void Approximate::wifi_11bg_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt,
   packet -> payloadLengthBytes = payloadLengthBytes;
 
   //802.11bg packet
-  wifi_mgmt_hdr* header = (wifi_mgmt_hdr*) wifi_11bg_pkt -> payload;
+  wifi_80211bg_hdr* header = (wifi_80211bg_hdr*) wifi_11bg_pkt -> payload;
   MacAddr_to_eth_addr(&(header -> sa), packet -> src);
   MacAddr_to_eth_addr(&(header -> da), packet -> dst);
 }
 
 void Approximate::wifi_11n_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11n_pkt, uint16_t payloadLengthBytes, Packet *packet) {
+  packet -> rssi = wifi_11n_pkt -> rx_ctrl.rssi;
+  packet -> channel = wifi_11n_pkt -> rx_ctrl.channel;
+  packet -> payloadLengthBytes = payloadLengthBytes;
+
+  //802.11n packet - TODO: This is a hack it does not always work!
+  wifi_80211n_hdr* header = (wifi_80211n_hdr*)  wifi_11n_pkt -> payload;
+  MacAddr_to_eth_addr(&(header -> sa), packet -> src);
+  MacAddr_to_eth_addr(&(header -> da), packet -> dst);
 }
 
 bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device) {

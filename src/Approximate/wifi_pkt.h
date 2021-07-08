@@ -103,7 +103,7 @@ typedef struct {
   MacAddr bssid;
   int16_t seqctl;
   unsigned char payload[];
-} __attribute__((packed)) wifi_mgmt_hdr;
+} __attribute__((packed)) wifi_80211bg_hdr;
 
 //TODO: this is a hack that tends to parse 802.11n headers OK - but not always
 typedef struct {
