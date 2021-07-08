@@ -51,7 +51,7 @@
       unsigned rate: 4;
       unsigned is_group: 1;
       unsigned: 1;
-      unsigned sig_mode: 2;       // 0:is not 11n packet; non-0:is 11n packet;
+      unsigned sig_mode: 2;       // 0: non-HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet
       unsigned legacy_length: 12; // if not 11n packet, shows length of packet.
       unsigned damatch0: 1;
       unsigned damatch1: 1;
@@ -104,5 +104,12 @@ typedef struct {
   int16_t seqctl;
   unsigned char payload[];
 } __attribute__((packed)) wifi_mgmt_hdr;
+
+//TODO: this is a hack that tends to parse 802.11n headers OK - but not always
+typedef struct {
+  unsigned:608;
+  MacAddr sa;
+  MacAddr da;
+} __attribute__((packed)) wifi_80211n_hdr;
 
 #endif
