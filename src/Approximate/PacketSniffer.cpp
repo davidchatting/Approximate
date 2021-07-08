@@ -43,17 +43,17 @@ bool PacketSniffer::begin() {
           delay(1000);
           esp_wifi_stop();
           esp_wifi_deinit();
-
-          tcpip_adapter_init();
-          esp_event_loop_init(NULL, NULL);
-
-          wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-          esp_wifi_init(&cfg);
-
-          esp_wifi_set_mode(WIFI_MODE_APSTA);
-          esp_wifi_start();
         }
       #endif
+
+      tcpip_adapter_init();
+      esp_event_loop_init(NULL, NULL);
+
+      wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+      esp_wifi_init(&cfg);
+
+      esp_wifi_set_mode(WIFI_MODE_APSTA);
+      esp_wifi_start();
 
       esp_wifi_set_promiscuous(true);
       esp_wifi_set_promiscuous_rx_cb(&rxCallback_32);
