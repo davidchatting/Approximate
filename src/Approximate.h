@@ -117,6 +117,8 @@ class Approximate {
 
     static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
     static bool wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *in, uint16_t payloadLengthBytes, Packet *out);
+    static void wifi_11bg_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt, uint16_t payloadLengthBytes, Packet *packet);
+    static void wifi_11n_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt, uint16_t payloadLengthBytes, Packet *packet);
     static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
 
     static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
