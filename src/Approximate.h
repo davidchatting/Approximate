@@ -115,13 +115,9 @@ class Approximate {
 
     void printWiFiStatus();
 
-    static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
-    static bool wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *in, uint16_t payloadLengthBytes, Packet *out);
-    static void wifi_11bg_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt, uint16_t payloadLengthBytes, Packet *packet);
-    static void wifi_11n_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt, uint16_t payloadLengthBytes, Packet *packet);
     static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
-
     static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
+    static int findMac(eth_addr &target, unsigned char *payload, int length);
 
   public:
     Approximate();
@@ -184,6 +180,7 @@ class Approximate {
     static bool uint8_t_to_eth_addr(uint8_t *in, eth_addr &out);
     static bool oui_to_eth_addr(int oui, eth_addr &out);
     static bool c_str_to_eth_addr(const char *in, eth_addr &out);
+    static bool c_str_to_MacAddr(const char *in, MacAddr &out);
     static bool String_to_eth_addr(String &in, eth_addr &out);
     static bool eth_addr_to_String(eth_addr &in, String &out);
     static bool eth_addr_to_c_str(eth_addr &in, char *out);
