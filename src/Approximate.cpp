@@ -689,6 +689,30 @@ bool Approximate::c_str_to_eth_addr(const char *in, eth_addr &out) {
   return(success);
 }
 
+bool Approximate::c_str_to_MacAddr(const char *in, MacAddr &out) {
+  bool success = false;
+
+  //clear:
+  for(int n=0; n<6; ++n) out.mac[n] = 0;
+
+  //basic format test ##:##:##:##:##:##
+  if(strlen(in) == 17) {
+    int a, b, c, d, e, f;
+    sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
+
+    out.mac[0] = a;
+    out.mac[1] = b;
+    out.mac[2] = c;
+    out.mac[3] = d;
+    out.mac[4] = e;
+    out.mac[5] = f;
+    
+    success = true;
+  } 
+
+  return(success);
+}
+
 bool Approximate::eth_addr_to_String(eth_addr &in, String &out) {
   bool success = true;
 
@@ -731,77 +755,47 @@ bool Approximate::MacAddr_to_MacAddr(MacAddr *in, MacAddr &out) {
   return(success);
 }
 
-bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device) {
+bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
   bool success = false;
 
   Packet *packet = new Packet();
-  if(wifi_promiscuous_pkt_to_Packet(pkt, payloadLengthBytes, packet)) {
-      if(Approximate::Packet_to_Device(packet, localBSSID, device)) {
+  if(wifi_pkt && packet) {
+    #if defined(ESP8266)
+      if(wifi_pkt -> rx_ctrl.sig_mode == 1) {
+        //802.11n packet
+        //Majority of these packets are corrupted
+      }
+    #endif
+
+    packet -> rssi = wifi_pkt -> rx_ctrl.rssi;
+    packet -> channel = wifi_pkt -> rx_ctrl.channel;
+    packet -> payloadLengthBytes = payloadLengthBytes;
+
+    //802.11 packet
+    wifi_80211_hdr* header = (wifi_80211_hdr*) wifi_pkt -> payload;
+    MacAddr_to_eth_addr(&(header -> sa), packet -> src);
+    MacAddr_to_eth_addr(&(header -> da), packet -> dst);
+
+    if(packet && device) {
+      if(eth_addr_cmp(&(packet -> src), &localBSSID)) {
+        //packet sent to this device - RSSI only informative for messages from device
+        device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
+        ArpTable::lookupIPAddress(device);
         success = true;
       }
+      else if(eth_addr_cmp(&(packet -> dst), &localBSSID)) {
+        //packet sent by this device
+        device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
+        ArpTable::lookupIPAddress(device);
+        success = true;
+      }
+      else {
+        //not associated with this bssid - not on this network
+      }
+    }
   }
   delete(packet);
   
-  return(success);
-}
-
-bool Approximate::wifi_promiscuous_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Packet *packet) {
-  bool success = true;
-
-  if(wifi_pkt && packet) {
-    switch (wifi_pkt -> rx_ctrl.sig_mode) {
-      case 0:   wifi_11bg_pkt_to_Packet(wifi_pkt, payloadLengthBytes, packet); break;
-      case 1:   wifi_11n_pkt_to_Packet(wifi_pkt, payloadLengthBytes, packet); break;
-      default:  success = false;
-    }
-  }
-
-  return(success);
-}
-
-void Approximate::wifi_11bg_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11bg_pkt, uint16_t payloadLengthBytes, Packet *packet) {
-  packet -> rssi = wifi_11bg_pkt -> rx_ctrl.rssi;
-  packet -> channel = wifi_11bg_pkt -> rx_ctrl.channel;
-  packet -> payloadLengthBytes = payloadLengthBytes;
-
-  //802.11bg packet
-  wifi_80211bg_hdr* header = (wifi_80211bg_hdr*) wifi_11bg_pkt -> payload;
-  MacAddr_to_eth_addr(&(header -> sa), packet -> src);
-  MacAddr_to_eth_addr(&(header -> da), packet -> dst);
-}
-
-void Approximate::wifi_11n_pkt_to_Packet(wifi_promiscuous_pkt_t *wifi_11n_pkt, uint16_t payloadLengthBytes, Packet *packet) {
-  packet -> rssi = wifi_11n_pkt -> rx_ctrl.rssi;
-  packet -> channel = wifi_11n_pkt -> rx_ctrl.channel;
-  packet -> payloadLengthBytes = payloadLengthBytes;
-
-  //802.11n packet - TODO: This is a hack it does not always work!
-  wifi_80211n_hdr* header = (wifi_80211n_hdr*)  wifi_11n_pkt -> payload;
-  MacAddr_to_eth_addr(&(header -> sa), packet -> src);
-  MacAddr_to_eth_addr(&(header -> da), packet -> dst);
-}
-
-bool Approximate::Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device) {
-  bool success = false;
-
-  if(packet && device) {
-    if(eth_addr_cmp(&(packet -> src), &bssid)) {
-      //packet sent to this device - RSSI only informative for messages from device
-      device -> init(packet -> dst, bssid, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
-      ArpTable::lookupIPAddress(device);
-      success = true;
-    }
-    else if(eth_addr_cmp(&(packet -> dst), &bssid)) {
-      //packet sent by this device
-      device -> init(packet -> src, bssid, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
-      ArpTable::lookupIPAddress(device);
-      success = true;
-    }
-    else {
-      //not associated with this bssid - not on this network
-    }
-  }
-
   return(success);
 }
 
@@ -824,4 +818,16 @@ bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *chann
   #endif
 
   return(success);
+}
+
+int Approximate::findMac(eth_addr &target, unsigned char *payload, int length) {
+  int result = -1;
+
+  for(int m=0; m<length && result == -1; ++m) {
+    int n = 0;
+    while(n<6 && (m + n) < length && payload[m + n] == target.addr[n]) ++n;
+    if(n == 6) result = m;
+  }
+
+  return(result);
 }
