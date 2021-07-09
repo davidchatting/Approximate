@@ -115,7 +115,7 @@ class Approximate {
 
     void printWiFiStatus();
 
-    static bool Packet_to_Device(Packet *packet, eth_addr &bssid, Device *device);
+    static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
     static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
     static int findMac(eth_addr &target, unsigned char *payload, int length);
 
