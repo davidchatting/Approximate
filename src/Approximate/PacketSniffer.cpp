@@ -181,12 +181,8 @@ void PacketSniffer::setChannelEventHandler(ChannelEventHandler channelEventHandl
 void PacketSniffer::rxCallback_8266(uint8_t *buf, uint16_t len) {
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *) buf;
 
-  wifi_promiscuous_pkt_type_t type = WIFI_PKT_DATA;
-  if(packet->rx_ctrl.sig_mode == 0) {
-    //TODO: Types only seem to work reliably for 802.11bg not 802.11n - so all 802.11n packets reported as WIFI_PKT_DATA
-    unsigned int frameControl = ((unsigned int)packet->payload[1] << 8) + packet->payload[0];
-    type = (wifi_promiscuous_pkt_type_t) ((frameControl & 0b0000000000001100) >> 2);
-  }
+  unsigned int frameControl = ((unsigned int)packet->payload[1] << 8) + packet->payload[0];
+  wifi_promiscuous_pkt_type_t type = (wifi_promiscuous_pkt_type_t) ((frameControl & 0b0000000000001100) >> 2);
 
   uint16_t sig_len = 0;
   #if defined(ESP8266)
