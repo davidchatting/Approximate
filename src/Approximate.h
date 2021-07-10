@@ -117,7 +117,7 @@ class Approximate {
 
     static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
     static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
-    static int findMac(eth_addr &target, unsigned char *payload, int length);
+    static int findPacketStart(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t lengthInBytes);
 
   public:
     Approximate();

@@ -495,24 +495,38 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
   Approximate::channelStateHandler = channelStateHandler;
 }
 
-void Approximate::parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type) {
+void Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type) {
+  int offset = 0;
+  #if defined(ESP8266)
+    if(wifi_pkt -> rx_ctrl.sig_mode == 1) {
+      //802.11n packet
+      //Majority of these packets are corrupted
+      //Calculate offset
+      offset = max(findPacketStart(wifi_pkt, len), 0);
+      //TODO: Recalculate type
+      type = PKT_DATA;
+      len = len - offset;
+    }
+  #endif
+  wifi_pkt = wifi_pkt + offset;
+
   switch (type) {
-    case PKT_MGMT: parseMgmtPacket(pkt); break;
-    case PKT_CTRL: parseCtrlPacket(pkt); break;
-    case PKT_DATA: parseDataPacket(pkt, len); break;
-    case PKT_MISC: parseMiscPacket(pkt); break;
+    case PKT_MGMT: parseMgmtPacket(wifi_pkt); break;
+    case PKT_CTRL: parseCtrlPacket(wifi_pkt); break;
+    case PKT_DATA: parseDataPacket(wifi_pkt, len); break;
+    case PKT_MISC: parseMiscPacket(wifi_pkt); break;
   }
 }
 
-void Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *pkt) {
+void Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
 }
 
-void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *pkt) {
+void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
 }
 
-void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength) {
+void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLength) {
   Device *device = new Device();
-  if(Approximate::wifi_promiscuous_pkt_to_Device(pkt, payloadLength, device)) {
+  if(Approximate::wifi_promiscuous_pkt_to_Device(wifi_pkt, payloadLength, device)) {
     if(!device -> matches(ownMacAddress) && (!onlyIndividualDevices || device -> isIndividual())) {
       if(proximateDeviceHandler) {
         Device *proximateDevice = Approximate::getProximateDevice(device);
@@ -760,13 +774,6 @@ bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pk
 
   Packet *packet = new Packet();
   if(wifi_pkt && packet) {
-    #if defined(ESP8266)
-      if(wifi_pkt -> rx_ctrl.sig_mode == 1) {
-        //802.11n packet
-        //Majority of these packets are corrupted
-      }
-    #endif
-
     packet -> rssi = wifi_pkt -> rx_ctrl.rssi;
     packet -> channel = wifi_pkt -> rx_ctrl.channel;
     packet -> payloadLengthBytes = payloadLengthBytes;
@@ -820,14 +827,8 @@ bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *chann
   return(success);
 }
 
-int Approximate::findMac(eth_addr &target, unsigned char *payload, int length) {
+int Approximate::findPacketStart(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t lengthInBytes) {
   int result = -1;
-
-  for(int m=0; m<length && result == -1; ++m) {
-    int n = 0;
-    while(n<6 && (m + n) < length && payload[m + n] == target.addr[n]) ++n;
-    if(n == 6) result = m;
-  }
 
   return(result);
 }
