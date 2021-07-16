@@ -87,11 +87,11 @@ class Approximate {
     voidFnPtr onceWifiStatusFnPtrPayload;
     wl_status_t triggerWifiStatus = WL_IDLE_STATUS;
 
-    static void parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type);
-    static void parseMgmtPacket(wifi_promiscuous_pkt_t *pkt);
-    static void parseCtrlPacket(wifi_promiscuous_pkt_t *pkt);
-    static void parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
-    static void parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
+    static bool parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type);
+    static bool parseMgmtPacket(wifi_promiscuous_pkt_t *pkt);
+    static bool parseCtrlPacket(wifi_promiscuous_pkt_t *pkt);
+    static bool parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
+    static bool parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
 
     static void parseChannelStateInformation(wifi_csi_info_t *info);
 
@@ -117,7 +117,8 @@ class Approximate {
 
     static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
     static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
-    static int findPacketStart(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t lengthInBytes);
+
+    static int indexOf(unsigned char *buffer, unsigned int bufferLength, unsigned char *substring, unsigned int subStringLength, unsigned int startIndex = 0, unsigned int occurrence = 1, int maxGap = -1);
 
   public:
     Approximate();
