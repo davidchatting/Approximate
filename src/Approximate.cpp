@@ -495,39 +495,50 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
   Approximate::channelStateHandler = channelStateHandler;
 }
 
-void Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type) {
-  int offset = 0;
+bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type) {
+  bool result = false;
+
   #if defined(ESP8266)
-    if(wifi_pkt -> rx_ctrl.sig_mode == 1) {
-      //802.11n packet
-      //Majority of these packets are corrupted
-      //Calculate offset
-      offset = max(findPacketStart(wifi_pkt, len), 0);
-      //TODO: Recalculate type
-      type = PKT_DATA;
-      len = len - offset;
-    }
+    int offset = 0;
+    //Validate packet - some packets are corrupted on the ESP8266 - for efficiency check only the large (presumably data) packets
+    if(len > 256) {
+      //Format is: (8) + control frame (2) + duratation (2) + da (6) + sa (6) + bbsid (6)
+      //The second occurrence of BSSID MAC address is at a known location - the first will be destination (da) or source (sa):
+      int p = indexOf((unsigned char *)wifi_pkt, min(len, (uint16_t) 512), localBSSID.addr, 6, 8 + 2 + 2, 2, 6); 
+      if(p != -1) {
+        offset = p - 28;
+        if(offset > 0) type = PKT_DATA;   //TODO: Recalculate type properly
+        len = len - offset;
+      }
+      wifi_pkt = (wifi_promiscuous_pkt_t *) &((unsigned char *)wifi_pkt)[offset];
+    }  
   #endif
-  wifi_pkt = wifi_pkt + offset;
 
   switch (type) {
-    case PKT_MGMT: parseMgmtPacket(wifi_pkt); break;
-    case PKT_CTRL: parseCtrlPacket(wifi_pkt); break;
-    case PKT_DATA: parseDataPacket(wifi_pkt, len); break;
-    case PKT_MISC: parseMiscPacket(wifi_pkt); break;
+    case PKT_MGMT: result = parseMgmtPacket(wifi_pkt); break;
+    case PKT_CTRL: result = parseCtrlPacket(wifi_pkt); break;
+    case PKT_DATA: result = parseDataPacket(wifi_pkt, len); break;
+    case PKT_MISC: result = parseMiscPacket(wifi_pkt); break;
   }
+
+  return(result);
 }
 
-void Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
+bool Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
+  return(false);
 }
 
-void Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
+bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
+  return(false);
 }
 
-void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLength) {
+bool Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLength) {
+  bool result = false;
+
   Device *device = new Device();
   if(Approximate::wifi_promiscuous_pkt_to_Device(wifi_pkt, payloadLength, device)) {
     if(!device -> matches(ownMacAddress) && (!onlyIndividualDevices || device -> isIndividual())) {
+      result = true;
       if(proximateDeviceHandler) {
         Device *proximateDevice = Approximate::getProximateDevice(device);
         int rssi = device -> getRSSI();
@@ -560,9 +571,12 @@ void Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t pay
     }
   }
   delete(device);
+
+  return(result);
 }
 
-void Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
+bool Approximate::parseMiscPacket(wifi_promiscuous_pkt_t *pkt) {
+  return(false);
 }
 
 void Approximate::parseChannelStateInformation(wifi_csi_info_t *info) {
@@ -827,8 +841,22 @@ bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *chann
   return(success);
 }
 
-int Approximate::findPacketStart(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t lengthInBytes) {
+int Approximate::indexOf(unsigned char *buffer, unsigned int bufferLength, unsigned char *substring, unsigned int subStringLength, unsigned int startIndex, unsigned int occurrence, int maxGap) {
   int result = -1;
+
+  if(maxGap == -1) maxGap = bufferLength;
+
+  int count = 0;
+  for(int m = startIndex; m < bufferLength && count < occurrence; ++m) {
+    int n = 0;
+    while(n<subStringLength && (m + n) < bufferLength && buffer[m + n] == substring[n]) ++n;
+    if(n == subStringLength) {
+      result = m;
+      bufferLength = min((m + subStringLength) + maxGap + subStringLength, bufferLength);
+      ++count;
+    }
+  }
+  if(count != occurrence) result = -1;
 
   return(result);
 }
