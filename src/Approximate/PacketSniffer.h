@@ -28,7 +28,7 @@ class PacketSniffer {
     bool getChannelScan();
     void setChannelScan(bool channelScan);
 
-    typedef void (*PacketEventHandler)(wifi_promiscuous_pkt_t *packet, uint16_t len, int type);
+    typedef bool (*PacketEventHandler)(wifi_promiscuous_pkt_t *packet, uint16_t len, int type);
     void setPacketEventHandler(PacketEventHandler packetEventHandler);
 
     typedef void (*ChannelEventHandler)(wifi_csi_info_t *data);
