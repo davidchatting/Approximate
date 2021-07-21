@@ -99,8 +99,7 @@ typedef struct {
   unsigned vers:2;
   wifi_promiscuous_pkt_type_t type:2;
   unsigned subtype:4;
-  unsigned toDS:1;
-  unsigned fromDS:1;
+  unsigned ds:2;
   unsigned moreFrag:1;
   unsigned retry:1;
   unsigned pwrMgt:1;
