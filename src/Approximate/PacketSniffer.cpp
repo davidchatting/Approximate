@@ -180,9 +180,8 @@ void PacketSniffer::setChannelEventHandler(ChannelEventHandler channelEventHandl
 
 void PacketSniffer::rxCallback_8266(uint8_t *buf, uint16_t len) {
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *) buf;
-
-  unsigned int frameControl = ((unsigned int)packet->payload[1] << 8) + packet->payload[0];
-  wifi_promiscuous_pkt_type_t type = (wifi_promiscuous_pkt_type_t) ((frameControl & 0b0000000000001100) >> 2);
+  wifi_80211_data_frame *frame = (wifi_80211_data_frame *) (packet -> payload);
+  wifi_promiscuous_pkt_type_t type = frame->fctl.type;
 
   uint16_t sig_len = 0;
   #if defined(ESP8266)
