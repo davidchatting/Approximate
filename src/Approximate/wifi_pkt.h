@@ -76,8 +76,8 @@
   
   typedef struct {
       wifi_pkt_rx_ctrl_t rx_ctrl;
-      u8 payload[36]; // head of ieee80211 packet
-      u16 cnt;        // number count of packet
+      u8 payload[0]; // ieee80211 payload
+      //u16 cnt;        // number count of packet
   } wifi_promiscuous_pkt_t;
 
   typedef struct {
@@ -96,13 +96,27 @@
 #endif
 
 typedef struct {
-  unsigned fctl:16;
+  unsigned vers:2;
+  wifi_promiscuous_pkt_type_t type:2;
+  unsigned subtype:4;
+  unsigned toDS:1;
+  unsigned fromDS:1;
+  unsigned moreFrag:1;
+  unsigned retry:1;
+  unsigned pwrMgt:1;
+  unsigned moreData:1;
+  unsigned protect:1;
+  unsigned order:1;
+} __attribute__((packed)) wifi_80211_fctl;
+
+typedef struct {
+  wifi_80211_fctl fctl;
   unsigned duration:16;
   MacAddr da;
   MacAddr sa;
   MacAddr bssid;
-  int16_t seqctl;
+  int16_t seqctl:16;
   unsigned char payload[];
-} __attribute__((packed)) wifi_80211_hdr;
+} __attribute__((packed)) wifi_80211_data_frame;
 
 #endif
