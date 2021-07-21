@@ -118,8 +118,6 @@ class Approximate {
     static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
     static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
 
-    static int indexOf(unsigned char *buffer, unsigned int bufferLength, unsigned char *substring, unsigned int subStringLength, unsigned int startIndex = 0, unsigned int occurrence = 1, int maxGap = -1);
-
   public:
     Approximate();
     bool init(String ssid, String password, bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true);

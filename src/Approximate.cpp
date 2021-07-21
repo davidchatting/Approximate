@@ -830,23 +830,3 @@ bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *chann
 
   return(success);
 }
-
-int Approximate::indexOf(unsigned char *buffer, unsigned int bufferLength, unsigned char *substring, unsigned int subStringLength, unsigned int startIndex, unsigned int occurrence, int maxGap) {
-  int result = -1;
-
-  if(maxGap == -1) maxGap = bufferLength;
-
-  int count = 0;
-  for(int m = startIndex; m < bufferLength && count < occurrence; ++m) {
-    int n = 0;
-    while(n<subStringLength && (m + n) < bufferLength && buffer[m + n] == substring[n]) ++n;
-    if(n == subStringLength) {
-      result = m;
-      bufferLength = min((m + subStringLength) + maxGap + subStringLength, bufferLength);
-      ++count;
-    }
-  }
-  if(count != occurrence) result = -1;
-
-  return(result);
-}
