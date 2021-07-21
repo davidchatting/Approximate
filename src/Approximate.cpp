@@ -498,21 +498,10 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
 bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type) {
   bool result = false;
 
-  #if defined(ESP8266)
-    int offset = 0;
-    //Validate packet - some packets are corrupted on the ESP8266 - for efficiency check only the large (presumably data) packets
-    if(len > 256) {
-      //Format is: (8) + control frame (2) + duratation (2) + da (6) + sa (6) + bbsid (6)
-      //The second occurrence of BSSID MAC address is at a known location - the first will be destination (da) or source (sa):
-      int p = indexOf((unsigned char *)wifi_pkt, min(len, (uint16_t) 512), localBSSID.addr, 6, 8 + 2 + 2, 2, 6); 
-      if(p != -1) {
-        offset = p - 28;
-        if(offset > 0) type = PKT_DATA;   //TODO: Recalculate type properly
-        len = len - offset;
-      }
-      wifi_pkt = (wifi_promiscuous_pkt_t *) &((unsigned char *)wifi_pkt)[offset];
-    }  
-  #endif
+  //TODO: is this still needed?
+  if( wifi_pkt -> rx_ctrl.sig_mode == 1 && len > 512) {
+    type = PKT_DATA;
+  }
 
   switch (type) {
     case PKT_MGMT: result = parseMgmtPacket(wifi_pkt); break;
@@ -532,11 +521,11 @@ bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
   return(false);
 }
 
-bool Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLength) {
+bool Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes) {
   bool result = false;
 
   Device *device = new Device();
-  if(Approximate::wifi_promiscuous_pkt_to_Device(wifi_pkt, payloadLength, device)) {
+  if(Approximate::wifi_promiscuous_pkt_to_Device(wifi_pkt, payloadLengthBytes, device)) {
     if(!device -> matches(ownMacAddress) && (!onlyIndividualDevices || device -> isIndividual())) {
       result = true;
       if(proximateDeviceHandler) {
@@ -792,21 +781,22 @@ bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pk
     packet -> channel = wifi_pkt -> rx_ctrl.channel;
     packet -> payloadLengthBytes = payloadLengthBytes;
 
-    //802.11 packet
-    wifi_80211_hdr* header = (wifi_80211_hdr*) wifi_pkt -> payload;
-    MacAddr_to_eth_addr(&(header -> sa), packet -> src);
-    MacAddr_to_eth_addr(&(header -> da), packet -> dst);
-
     if(packet && device) {
-      if(eth_addr_cmp(&(packet -> src), &localBSSID)) {
-        //packet sent to this device - RSSI only informative for messages from device
-        device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
+      //802.11 packet
+      wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
+      MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
+      MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
+
+      byte ds = frame -> fctl.ds;
+      if(ds == 1 && eth_addr_cmp(&(packet -> dst), &localBSSID)) {
+        //packet sent by this device
+        device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
         ArpTable::lookupIPAddress(device);
         success = true;
       }
-      else if(eth_addr_cmp(&(packet -> dst), &localBSSID)) {
-        //packet sent by this device
-        device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
+      else if(ds == 2 && eth_addr_cmp(&(packet -> src), &localBSSID)) {
+        //packet sent to this device - RSSI only informative for messages from device
+        device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
         ArpTable::lookupIPAddress(device);
         success = true;
       }
