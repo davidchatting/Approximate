@@ -51,7 +51,7 @@
       unsigned rate: 4;
       unsigned is_group: 1;
       unsigned: 1;
-      unsigned sig_mode: 2;       // 0:is not 11n packet; non-0:is 11n packet;
+      unsigned sig_mode: 2;       // 0: non-HT(11bg) packet; 1: HT(11n) packet; 3: VHT(11ac) packet
       unsigned legacy_length: 12; // if not 11n packet, shows length of packet.
       unsigned damatch0: 1;
       unsigned damatch1: 1;
@@ -76,8 +76,8 @@
   
   typedef struct {
       wifi_pkt_rx_ctrl_t rx_ctrl;
-      u8 payload[36]; // head of ieee80211 packet
-      u16 cnt;        // number count of packet
+      u8 payload[0]; // ieee80211 payload
+      //u16 cnt;        // number count of packet
   } wifi_promiscuous_pkt_t;
 
   typedef struct {
@@ -96,13 +96,26 @@
 #endif
 
 typedef struct {
-  unsigned fctl:16;
+  unsigned vers:2;
+  wifi_promiscuous_pkt_type_t type:2;
+  unsigned subtype:4;
+  unsigned ds:2;
+  unsigned moreFrag:1;
+  unsigned retry:1;
+  unsigned pwrMgt:1;
+  unsigned moreData:1;
+  unsigned protect:1;
+  unsigned order:1;
+} __attribute__((packed)) wifi_80211_fctl;
+
+typedef struct {
+  wifi_80211_fctl fctl;
   unsigned duration:16;
   MacAddr da;
   MacAddr sa;
   MacAddr bssid;
-  int16_t seqctl;
+  int16_t seqctl:16;
   unsigned char payload[];
-} __attribute__((packed)) wifi_mgmt_hdr;
+} __attribute__((packed)) wifi_80211_data_frame;
 
 #endif
