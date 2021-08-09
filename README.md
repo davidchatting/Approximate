@@ -405,6 +405,17 @@ Projects that use the Approximate library include:
 * [Three WiFi Meters](https://github.com/davidchatting/ThreeWiFiMeters)
 * [Proximate Sonoff switch](https://www.youtube.com/watch?v=cXh0T1CWtyg)
 
+## Credits
+
+The Approximate library has learnt much from the work of others, including:
+* [ESP8266 WifiSniffer](https://github.com/kalanda/esp8266-sniffer)
+* [ESP32 WiFi MAC Scanner/Sniffer](https://www.hackster.io/p99will/esp32-wifi-mac-scanner-sniffer-promiscuous-4c12f4)
+* [ArduinoPcap](https://github.com/spacehuhn/ArduinoPcap)
+* [Nexmon Channel State Information Extractor](https://github.com/seemoo-lab/nexmon_csi)
+* [ESP32 CSI Tool](https://github.com/StevenMHernandez/ESP32-CSI-Tool)
+* [ESP32 gather CSI](https://github.com/jonathanmuller/ESP32-gather-channel-state-information-CSI-)
+* [ESP32 CSI Phase Chart](https://github.com/diegonunesbr/ESP32-CSI-Phase-Chart)
+
 ## Author
 
 The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [A Network of One's Own](http://davidchatting.com/nooo/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
