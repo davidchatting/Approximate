@@ -28,24 +28,6 @@
     WIFI_PKT_MISC  /**< Other type, such as MIMO etc. 'buf' argument is wifi_promiscuous_pkt_t but the payload is zero length. */
   } wifi_promiscuous_pkt_type_t;
 
-  typedef enum {
-    ASSOCIATION_REQ,
-    ASSOCIATION_RES,
-    REASSOCIATION_REQ,
-    REASSOCIATION_RES,
-    PROBE_REQ,
-    PROBE_RES,
-    NU0,
-    NU1,
-    BEACON,
-    ATIM,
-    DISASSOCIATION,
-    AUTHENTICATION,
-    DEAUTHENTICATION,
-    ACTION,
-    ACTION_NACK,
-  } wifi_mgmt_subtypes_t;
-
   typedef struct {
       signed rssi: 8;             // signal intensity of packet
       unsigned rate: 4;
@@ -95,10 +77,28 @@
   
 #endif
 
+typedef enum {
+  ASSOCIATION_REQ,
+  ASSOCIATION_RES,
+  REASSOCIATION_REQ,
+  REASSOCIATION_RES,
+  PROBE_REQ,
+  PROBE_RES,
+  NU0,
+  NU1,
+  BEACON,
+  ATIM,
+  DISASSOCIATION,
+  AUTHENTICATION,
+  DEAUTHENTICATION,
+  ACTION,
+  ACTION_NACK,
+} wifi_mgmt_subtypes_t;
+
 typedef struct {
   unsigned vers:2;
   wifi_promiscuous_pkt_type_t type:2;
-  unsigned subtype:4;
+  wifi_mgmt_subtypes_t subtype:4;
   unsigned ds:2;
   unsigned moreFrag:1;
   unsigned retry:1;
@@ -117,5 +117,20 @@ typedef struct {
   int16_t seqctl:16;
   unsigned char payload[];
 } __attribute__((packed)) wifi_80211_data_frame;
+
+//TODO resolve differences with wifi_80211_data_frame:
+typedef struct {
+    wifi_80211_fctl frame_ctrl;
+    uint8_t addr1[6]; // receiver address
+    uint8_t addr2[6]; // sender address
+    uint8_t addr3[6]; // filtering address
+    unsigned sequence_ctrl:16;
+    uint8_t addr4[6]; // optional
+} wifi_ieee80211_mac_hdr_t;
+
+typedef struct {
+    wifi_ieee80211_mac_hdr_t hdr;
+    uint8_t payload[2]; //  network data ended with 4 bytes csum (CRC32)
+} wifi_ieee80211_packet_t;
 
 #endif
