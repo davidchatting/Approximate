@@ -28,7 +28,7 @@ class PacketSniffer {
     bool getChannelScan();
     void setChannelScan(bool channelScan);
 
-    typedef bool (*PacketEventHandler)(wifi_promiscuous_pkt_t *packet, uint16_t len, int type);
+    typedef bool (*PacketEventHandler)(wifi_promiscuous_pkt_t *packet, uint16_t len, int type, int subtype);
     void setPacketEventHandler(PacketEventHandler packetEventHandler);
 
     typedef void (*ChannelEventHandler)(wifi_csi_info_t *data);
@@ -50,7 +50,7 @@ class PacketSniffer {
 
     static void rxCallback_8266(uint8_t *buf, uint16_t len);
     static void rxCallback_32(void* buf, wifi_promiscuous_pkt_type_t type);
-    static void rxCallback(wifi_promiscuous_pkt_t *packet, uint16_t len, wifi_promiscuous_pkt_type_t type);
+    static void rxCallback(wifi_promiscuous_pkt_t *packet, uint16_t len, wifi_promiscuous_pkt_type_t type, wifi_mgmt_subtypes_t subtype);
 
     static void csiCallback_32(void *ctx, wifi_csi_info_t *data);
 

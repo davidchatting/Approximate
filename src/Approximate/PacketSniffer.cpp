@@ -182,29 +182,32 @@ void PacketSniffer::rxCallback_8266(uint8_t *buf, uint16_t len) {
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *) buf;
   wifi_80211_data_frame *frame = (wifi_80211_data_frame *) (packet -> payload);
   wifi_promiscuous_pkt_type_t type = frame->fctl.type;
+  wifi_mgmt_subtypes_t subtype = frame->fctl.subtype;
 
   uint16_t sig_len = 0;
   #if defined(ESP8266)
     sig_len = packet->rx_ctrl.sig_mode ? packet->rx_ctrl.HT_length : packet->rx_ctrl.legacy_length;
   #endif
 
-  rxCallback(packet, sig_len, type);
+  rxCallback(packet, sig_len, type, subtype);
 }
 
 void PacketSniffer::rxCallback_32(void* buf, wifi_promiscuous_pkt_type_t type) {
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *) buf;
+  wifi_80211_data_frame *frame = (wifi_80211_data_frame *) (packet -> payload);
+  wifi_mgmt_subtypes_t subtype = frame->fctl.subtype;
   
   uint16_t sig_len = 0;
   #if defined(ESP32)
     sig_len = packet->rx_ctrl.sig_len;
   #endif
 
-  rxCallback(packet, sig_len, type);
+  rxCallback(packet, sig_len, type, subtype);
 }
 
-void PacketSniffer::rxCallback(wifi_promiscuous_pkt_t *packet, uint16_t len, wifi_promiscuous_pkt_type_t type) {
+void PacketSniffer::rxCallback(wifi_promiscuous_pkt_t *packet, uint16_t len, wifi_promiscuous_pkt_type_t type, wifi_mgmt_subtypes_t subtype) {
   if (running && packetEventHandler) {
-    packetEventHandler(packet, len, (int) type);
+    packetEventHandler(packet, len, (int) type, subtype);
   }
 }
 
