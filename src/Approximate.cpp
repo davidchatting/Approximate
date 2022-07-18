@@ -495,7 +495,7 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
   Approximate::channelStateHandler = channelStateHandler;
 }
 
-bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type) {
+bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type, int subtype) {
   bool result = false;
 
   //TODO: is this still needed?
@@ -776,33 +776,33 @@ bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pk
   bool success = false;
 
   Packet *packet = new Packet();
-  if(wifi_pkt && packet) {
-    packet -> rssi = wifi_pkt -> rx_ctrl.rssi;
-    packet -> channel = wifi_pkt -> rx_ctrl.channel;
+  if(wifi_pkt && device && packet) {
+    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt -> rx_ctrl);
+    packet -> rssi = rx_ctrl->rssi;
+    packet -> channel = rx_ctrl->channel;
     packet -> payloadLengthBytes = payloadLengthBytes;
 
-    if(packet && device) {
-      //802.11 packet
-      wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
-      MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
-      MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
+    //802.11 packet
+    wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
+    MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
+    MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
 
-      byte ds = frame -> fctl.ds;
-      if(ds == 1 && eth_addr_cmp(&(packet -> dst), &localBSSID)) {
-        //packet sent by this device
-        device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
-        ArpTable::lookupIPAddress(device);
-        success = true;
-      }
-      else if(ds == 2 && eth_addr_cmp(&(packet -> src), &localBSSID)) {
-        //packet sent to this device - RSSI only informative for messages from device
-        device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
-        ArpTable::lookupIPAddress(device);
-        success = true;
-      }
-      else {
-        //not associated with this bssid - not on this network
-      }
+    wifi_80211_fctl *fctl = &(frame -> fctl);
+    byte ds = fctl -> ds;
+    if(ds == 1 && eth_addr_cmp(&(packet -> dst), &localBSSID)) {
+      //packet sent by this device
+      device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
+      ArpTable::lookupIPAddress(device);
+      success = true;
+    }
+    else if(ds == 2 && eth_addr_cmp(&(packet -> src), &localBSSID)) {
+      //packet sent to this device - RSSI only informative for messages from device
+      device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
+      ArpTable::lookupIPAddress(device);
+      success = true;
+    }
+    else {
+      //not associated with this bssid - not on this network
     }
   }
   delete(packet);
