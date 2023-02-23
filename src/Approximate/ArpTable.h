@@ -51,10 +51,11 @@ class ArpTable {
         void end();
         void loop();
         bool isRunning();
-
+        
         static bool lookupIPAddress(Device *device);
         static bool lookupIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr);
-
+        bool contains(ip4_addr_t &ipaddr);
+        
         static void scan();
 };
 

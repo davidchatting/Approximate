@@ -26,6 +26,8 @@ ArpTable::ArpTable(int updateIntervalMs, bool repeatedScans) {
     this -> lastUpdateTimeMs = -updateIntervalMs;
 
     this -> repeatedScans = repeatedScans;
+
+    for(int n=0; n<256; ++n) cache[n] = 0;
 }
 
 ArpTable* ArpTable::getInstance(int updateIntervalMs, bool repeatedScans) {
@@ -147,6 +149,17 @@ bool ArpTable::lookupIPAddress(eth_addr &macAddress, ip4_addr_t &ipaddr) {
     }
 
     return(found);
+}
+
+bool ArpTable::contains(ip4_addr_t &ipaddr) {
+    bool result = false;
+
+    if((ipaddr.addr & 0xFFFFFF) == (localNetwork.addr & 0xFFFFFF)) {
+        //Same subnet
+        result = (cache[(ipaddr.addr >> 24) & 0xFF] != 0);
+    }
+
+    return(result);
 }
 
 uint32_t ArpTable::getHash(eth_addr &macAddress) {
