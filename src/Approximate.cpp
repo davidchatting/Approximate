@@ -647,6 +647,16 @@ Device *Approximate::getProximateDevice(eth_addr &macAddress) {
   return(proximateDevice);
 }
 
+bool Approximate::canResolve(ip4_addr_t &ipaddr) {
+  bool result = false;
+
+  if(arpTable) {
+    result = arpTable -> contains(ipaddr);
+  }
+
+  return(result);
+}
+
 bool Approximate::MacAddr_to_eth_addr(MacAddr *in, eth_addr &out) {
   bool success = true;
 
