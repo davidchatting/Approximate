@@ -23,12 +23,20 @@
 #include "Device.h"
 
 class ArpTable {
+    public:
+        typedef enum {
+            ARP_UNSCANNED,
+            ARP_SCANNING,
+            ARP_SCANNED
+        } ArpStatus;
+
     private:
         static uint32_t *cache;
         static ip4_addr_t localNetwork;
 
         static bool running;
         bool repeatedScans = true;
+        static ArpStatus status;
 
         int updateIntervalMs;
         static const int minUpdateIntervalMs;
@@ -57,6 +65,8 @@ class ArpTable {
         bool contains(ip4_addr_t &ipaddr);
         
         static void scan();
+
+        ArpTable::ArpStatus getStatus();
 };
 
 #endif

@@ -8,6 +8,7 @@
 
 #include "ArpTable.h"
 
+ArpTable::ArpStatus ArpTable::status = ARP_UNSCANNED;
 bool ArpTable::running = false;
 
 ip4_addr_t ArpTable::localNetwork;
@@ -61,6 +62,7 @@ bool ArpTable::isRunning() {
 
 void ArpTable::scan() {
     if(WiFi.status() == WL_CONNECTED) {
+        status = ARP_SCANNING;
         Serial.printf("Building ARP table, takes %i seconds...\t", (minUpdateIntervalMs * 256)/1000);
         IP4_ADDR(&localNetwork, WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], 0);
 
@@ -74,6 +76,7 @@ void ArpTable::scan() {
         for(int n=0; n<256; ++n)    find(n, false);
 
         Serial.printf("DONE\n");
+        status = ARP_SCANNED;
     }
 }
 
@@ -169,4 +172,8 @@ uint32_t ArpTable::getHash(eth_addr &macAddress) {
     hash = (macAddress.addr[2] << 24) | (macAddress.addr[3] << 16) | (macAddress.addr[4] << 8) | (macAddress.addr[5] & 0xFF);
 
     return(hash);
+}
+
+ArpTable::ArpStatus ArpTable::getStatus() {
+    return(status);
 }
