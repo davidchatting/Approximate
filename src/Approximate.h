@@ -159,6 +159,7 @@ class Approximate {
     static bool isProximateDevice(eth_addr &macAddress);
 
     bool canResolve(ip4_addr_t &ipaddr);
+    bool canResolve();
 
     void setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive = true);
     void setProximateDeviceHandler(DeviceHandler deviceHandler, int rssiThreshold = APPROXIMATE_PERSONAL_RSSI, int lastSeenTimeoutMs = 60000);

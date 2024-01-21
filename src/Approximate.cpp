@@ -647,6 +647,10 @@ Device *Approximate::getProximateDevice(eth_addr &macAddress) {
   return(proximateDevice);
 }
 
+bool Approximate::canResolve() {
+  return(arpTable != NULL && arpTable->getStatus() == ArpTable::ARP_SCANNED);
+}
+
 bool Approximate::canResolve(ip4_addr_t &ipaddr) {
   bool result = false;
 
