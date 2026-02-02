@@ -4,6 +4,7 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) October 2020
+    Updated 2026
 */
 
 #ifndef eth_addr_h
