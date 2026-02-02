@@ -58,6 +58,21 @@
       "name": "MonitorCSI",
       "base": "examples/MonitorCSI",
       "files": ["MonitorCSI.ino"]
+    },
+    {
+      "name": "ProbeDetect",
+      "base": "examples/ProbeDetect",
+      "files": ["ProbeDetect.ino"]
+    },
+    {
+      "name": "ProximityZones",
+      "base": "examples/ProximityZones",
+      "files": ["ProximityZones.ino"]
+    },
+    {
+      "name": "DeviceFilter",
+      "base": "examples/DeviceFilter",
+      "files": ["DeviceFilter.ino"]
     }
   ]
 }
