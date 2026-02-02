@@ -8,7 +8,32 @@ The Approximate library is a WiFi [Arduino](http://www.arduino.cc/download) Libr
 
 Technically this library makes it easy to use WiFi signal strength ([RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication)) to estimate the physical distance to a device on your home network, then obtain its [MAC address](https://en.wikipedia.org/wiki/MAC_address) and optionally its [IP address](https://en.wikipedia.org/wiki/IPv4). The network activity of these devices can also be observed.
 
+## What's New in v2.0.0 (2026)
+
+This release includes significant improvements to device detection and project tooling:
+
+### Improved Packet Parsing
+- **Management frame parsing**: The library now parses IEEE 802.11 management frames including probe requests, probe responses, beacons, authentication, association, and deauthentication frames. Probe requests are particularly valuable because they are sent by all WiFi devices scanning for networks - even those not connected to any network - providing RSSI-based proximity detection for a much wider range of devices.
+- **Control frame parsing**: RTS (Request to Send), Block Ack Request, Block Ack, and PS-Poll control frames are now parsed to extract transmitter addresses and RSSI, enabling additional proximity observations.
+- **New `PROBE` event type**: A new `Approximate::PROBE` event is generated when a device is detected via a management or control frame. This fires alongside the existing `ARRIVE`/`DEPART` lifecycle for proximate devices.
+- **Complete IEEE 802.11 frame type definitions**: Added `wifi_ctrl_subtypes_t` (control frame subtypes), `wifi_data_subtypes_t` (data frame subtypes), and dedicated C structs for management frames (`wifi_80211_mgmt_frame`), RTS frames (`wifi_80211_ctrl_rts_frame`), ACK/CTS frames (`wifi_80211_ctrl_ack_frame`), Block Ack frames (`wifi_80211_ctrl_bar_frame`), and Information Elements (`wifi_80211_ie`). ToDS/FromDS direction constants (`DS_IBSS`, `DS_TO_AP`, `DS_FROM_AP`, `DS_WDS`) are now defined for clarity.
+
+### PlatformIO Support
+- **`library.json`**: Added PlatformIO library manifest for registry compatibility. Add `lib_deps = https://github.com/davidchatting/Approximate.git` to your `platformio.ini`.
+- **`platformio.ini`**: Included a PlatformIO project configuration with ESP32 and ESP8266 environments. Test examples with `pio ci`.
+- **PlatformIO-compatible examples**: All example sketches now include forward declarations for callback functions, ensuring they compile with both the Arduino IDE and PlatformIO (which does not auto-generate prototypes from `.ino` files).
+- **ListLib dependency**: Uses the [davidchatting/Arduino-List](https://github.com/davidchatting/Arduino-List) fork, which fixes a case-sensitivity issue (`arduino.h` vs `Arduino.h`) that prevented the upstream ListLib from compiling on Linux.
+
+### Maintenance
+- **Version bump**: 1.4 to 2.0.0 (semver).
+- **Copyright updated**: All source file headers updated to reflect 2020-2026.
+- **GitHub Actions CI**: Updated from `actions/checkout@v2` to `actions/checkout@v4`.
+- **Build tested**: All 9 examples compile cleanly on both ESP32 and ESP8266 via PlatformIO (`pio ci`).
+- **New examples**: Added `ProbeDetect` (demonstrates the new `PROBE` event), `ProximityZones` (classifies devices by RSSI zone), and `DeviceFilter` (OUI-based filtering with `addActiveDeviceFilter`).
+
 ## Installation
+
+### Arduino IDE
 
 The latest stable release of Approximate is available in the Arduino IDE Library Manager - search for "Approximate". Click install.
 
@@ -22,6 +47,39 @@ Approximate requires that either the Arduino core for the ESP8266 or ESP32 is in
 In addition, the following libraries are also required:
 
 * ListLib - https://github.com/luisllamasbinaburo/Arduino-List (install via the Arduino IDE Library Manager - searching for "ListLib")
+
+### PlatformIO
+
+Add Approximate to your `platformio.ini`:
+
+```ini
+[env:esp32]
+platform = espressif32
+board = esp32dev
+framework = arduino
+lib_deps =
+    https://github.com/davidchatting/Approximate.git
+```
+
+Or for ESP8266:
+
+```ini
+[env:esp8266]
+platform = espressif8266
+board = esp12e
+framework = arduino
+lib_deps =
+    https://github.com/davidchatting/Approximate.git
+```
+
+The `Arduino-List` dependency will be resolved automatically via `library.json`.
+
+To test-compile the included examples from the library checkout:
+
+```bash
+pio ci examples/CloseBy/CloseBy.ino --lib="." --board=esp32dev
+pio ci examples/CloseBy/CloseBy.ino --lib="." --board=esp12e
+```
 
 ## Limitations
 Approximate works with 2.4GHz WiFi networks, but not 5GHz networks - neither ESP8266 or ESP32 support this technology. This means that devices that are connected to a 5GHz WiFi network will be invisible to this library. Approximate will not work as expected where [MAC address randomisation](https://support.apple.com/en-gb/guide/security/secb9cb3140c/web) is enabled - the default iOS setting.
@@ -90,12 +148,13 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 
 This example uses a Proximate Device Handler. The `onProximateDevice()` callback function receives both a pointer to a `Device` and a `DeviceEvent` for each new observation - in this example the events `ARRIVE` and `DEPART` cause the device's [MAC address](https://en.wikipedia.org/wiki/MAC_address) to be printed out and the state to be indicated via the LED. MAC addresses are the primary way in which the Approximate library identifies network devices.
 
-There are four event types that a `DeviceHandler` will encounter: 
+There are five event types that a `DeviceHandler` will encounter:
 
 * `Approximate::ARRIVE` once when the device first arrives in proximity (only for Proximate Device Handlers)
 * `Approximate::DEPART` once when the device departs and is no longer seen in proximity (only for Proximate Device Handlers)
 * `Approximate::SEND` every time the device sends (uploads) data
 * `Approximate::RECEIVE` every time the device receives (downloads) data (rarely for Proximate Device Handlers, unless the router is also in proximity)
+* `Approximate::PROBE` when a device is detected via a management frame (e.g. probe request) or control frame - this can detect devices that are not associated with any network
 
 The Proximate Device Handler is set by `setProximateDeviceHandler()`, which takes a `DeviceHandler` callback function parameter (here `onProximateDevice`) and a value for the `rssiThreshold` parameter that describes range considered to be in proximity (here `APPROXIMATE_PERSONAL_RSSI`). [RSSI](https://en.wikipedia.org/wiki/Received_signal_strength_indication) is a measure of WiFi signal strength used to estimate proximity. It is measured in [dBm](https://en.wikipedia.org/wiki/DBm) and at close proximity (where the reception is good) its value will approach zero, as the signal degrades over distance and through objects and walls, the value will fall. For instance, an RSSI of -50 would represent a relatively strong signal. The library predefines four values of `rssiThreshold` for use, that borrow from the language of [proxemics](https://en.wikipedia.org/wiki/Proxemics):
 
@@ -141,7 +200,7 @@ void loop() {
   approx.loop();
 
   digitalWrite(LED_PIN, ledState);
-  
+
   if(ledToggleIntervalMs > 0 && millis() > ledToggleAtMs) {
     ledState = !ledState;
     ledToggleAtMs = millis() + ledToggleIntervalMs;
@@ -149,7 +208,7 @@ void loop() {
 }
 
 void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
-  if(event == Approximate::SEND) {  
+  if(event == Approximate::SEND) {
     ledToggleIntervalMs = map(device->getRSSI(), -100, 0, 1000, 0);
   }
 }
@@ -262,11 +321,11 @@ void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
 
     String json = "{\"" + device->getMacAddressAsString() + "\":\"" + Approximate::toString(event) + "\"}";
     Serial.println(json);
-    
+
     approx.onceWifiStatus(WL_CONNECTED, [](String payload) {
       mqttClient.connect(WiFi.macAddress().c_str());
       mqttClient.publish("closeby", payload.c_str(), false); //false = don't retain message
-      
+
       #if defined(ESP8266)
         delay(20);
         approx.disconnectWiFi();
@@ -356,7 +415,7 @@ void onCloseBySonoff(Device *device, Approximate::DeviceEvent event) {
 }
 
 void onButtonEvent(AceButton* button, uint8_t eventType, uint8_t buttonState) {
-  if(closeBySonoff) {  
+  if(closeBySonoff) {
     switch (eventType) {
       case AceButton::kEventPressed:
         switchCloseBySonoff(true);
@@ -376,15 +435,15 @@ void switchCloseBySonoff(bool switchState) {
         String url = "http://" + closeBySonoff->getIPAddressAsString() + ":8081/zeroconf/switch";
         http.begin(url);
         http.addHeader("Content-Type", "application/json");
-      
+
         String switchValue = switchState?"on":"off";
         String httpRequestData = "{\"deviceid\": \"\",\"data\": {\"switch\": \"" + switchValue + "\"}}";
-        
+
         int httpResponseCode = http.POST(httpRequestData);
         Serial.printf("%s\t%s\t%i\n",url.c_str(), httpRequestData.c_str(), httpResponseCode);
         http.end();
       }
-      
+
       #if defined(ESP8266)
         delay(20);
         approx.disconnectWiFi();
@@ -398,6 +457,161 @@ void switchCloseBySonoff(bool switchState) {
 This is a further extension to the CloseBy example and again retains the same structure. It uses a simple Proximate Device Handler (`onProximateDevice()`) and attempts to determine the type of the proximate device by its [OUI code](https://en.wikipedia.org/wiki/Organizationally_unique_identifier). Those identifying as `0xD8F15B` are manufactured by Expressif Inc, used by Sonoff (see http://standards-oui.ieee.org/oui.txt) - `onCloseBySonoff()` is then called. If the button is pressed and released `switchCloseBySonoff()` will be called to first turn on and then off a proximate Sonoff socket. The LED is illuminated to show that a device is present.
 
 Significantly this example requires that not only a proximate device's MAC address be known, but also its local [IP address - IPv4](https://en.wikipedia.org/wiki/IPv4) be determined. In default operation IP addresses are not available, but can be simply enabled by setting an optional parameter on `Approximate::init()` to `true`. This will initiate an [ARP scan](https://en.wikipedia.org/wiki/Address_Resolution_Protocol) of the local network when `Approximate::begin()` is called. However, this will cause an additional delay of 76 seconds on an ESP8266 and 12 seconds on an ESP32 before the main program will operate. The ESP32 will periodically automatically refresh its ARP table, but the ESP8266 will not - meaning that an ESP8266 will be unable to determine the IP address of new devices appearing on the network.
+
+### Probe Detect - detecting devices via management frames
+
+The [ProbeDetect example](examples/ProbeDetect) demonstrates the `PROBE` event introduced in v2.0. It detects nearby devices via WiFi management frames (probe requests, beacons) and control frames - these are sent by devices even when they are not connected to any network. This makes it possible to detect a wider range of devices than data frame observation alone. No IP address resolution is needed.
+
+```
+#include <Approximate.h>
+Approximate approx;
+
+void setup() {
+  Serial.begin(9600);
+
+  if (approx.init("MyHomeWiFi", "password", false)) {
+    approx.setProximateDeviceHandler(onProximateDevice, APPROXIMATE_PERSONAL_RSSI);
+    approx.begin();
+  }
+}
+
+void loop() {
+  approx.loop();
+}
+
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
+  switch (event) {
+    case Approximate::ARRIVE:
+      Serial.printf("ARRIVE\t%s\tOUI: 0x%06X\tRSSI: %i\n",
+        device->getMacAddressAsString().c_str(),
+        device->getOUI(),
+        device->getRSSI());
+      break;
+    case Approximate::DEPART:
+      Serial.printf("DEPART\t%s\n",
+        device->getMacAddressAsString().c_str());
+      break;
+    case Approximate::PROBE:
+      Serial.printf("PROBE\t%s\tRSSI: %i\n",
+        device->getMacAddressAsString().c_str(),
+        device->getRSSI());
+      break;
+  }
+}
+```
+
+The `PROBE` event fires each time a management or control frame is received from a proximate device. Unlike `ARRIVE` (which fires once when a device enters proximity), `PROBE` fires repeatedly as frames are observed, providing ongoing RSSI updates. This is useful for tracking signal strength changes in real time.
+
+### Proximity Zones - classifying devices by distance
+
+The [ProximityZones example](examples/ProximityZones) classifies nearby devices into proximity zones based on their RSSI signal strength, using the four predefined threshold constants. It demonstrates `setProximateRSSIThreshold()` and `setProximateLastSeenTimeoutMs()`.
+
+```
+#include <Approximate.h>
+Approximate approx;
+
+void setup() {
+  Serial.begin(9600);
+
+  if (approx.init("MyHomeWiFi", "password", false)) {
+    Approximate::setProximateRSSIThreshold(APPROXIMATE_PUBLIC_RSSI);
+    Approximate::setProximateLastSeenTimeoutMs(5000);
+
+    approx.setProximateDeviceHandler(onProximateDevice);
+    approx.begin();
+  }
+}
+
+void loop() {
+  approx.loop();
+}
+
+void onProximateDevice(Device *device, Approximate::DeviceEvent event) {
+  int rssi = device->getRSSI();
+
+  switch (event) {
+    case Approximate::ARRIVE:
+      Serial.printf("ARRIVE\t%s\t[%s]\tRSSI: %i\n",
+        device->getMacAddressAsString().c_str(),
+        getProximityZone(rssi), rssi);
+      break;
+    case Approximate::DEPART:
+      Serial.printf("DEPART\t%s\n",
+        device->getMacAddressAsString().c_str());
+      break;
+    case Approximate::PROBE:
+      Serial.printf("PROBE\t%s\t[%s]\tRSSI: %i\n",
+        device->getMacAddressAsString().c_str(),
+        getProximityZone(rssi), rssi);
+      break;
+  }
+}
+
+const char* getProximityZone(int rssi) {
+  if (rssi > APPROXIMATE_INTIMATE_RSSI) return "INTIMATE";
+  if (rssi > APPROXIMATE_PERSONAL_RSSI) return "PERSONAL";
+  if (rssi > APPROXIMATE_SOCIAL_RSSI)   return "SOCIAL";
+  return "PUBLIC";
+}
+```
+
+By setting `APPROXIMATE_PUBLIC_RSSI` as the threshold, this example detects devices at the maximum range and classifies them into zones: `INTIMATE` (< 0.5m), `PERSONAL` (0.5-1.5m), `SOCIAL` (1.5-3m), or `PUBLIC` (3-5m). The `setProximateRSSIThreshold()` and `setProximateLastSeenTimeoutMs()` methods can also be called at runtime to dynamically adjust detection sensitivity.
+
+### Device Filter - filtering by manufacturer OUI
+
+The [DeviceFilter example](examples/DeviceFilter) demonstrates `addActiveDeviceFilter()` with OUI (Organizationally Unique Identifier) codes to observe only devices from specific manufacturers. This is useful for monitoring a fleet of devices or detecting specific hardware on the network.
+
+```
+#include <Approximate.h>
+Approximate approx;
+
+const int LED_PIN = 2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+
+  if (approx.init("MyHomeWiFi", "password")) {
+    // Filter for Espressif devices by OUI
+    approx.addActiveDeviceFilter(0xA4CF12);
+    approx.addActiveDeviceFilter(0x3C71BF);
+    approx.addActiveDeviceFilter(0xD8F15B);
+
+    approx.setActiveDeviceHandler(onActiveDevice);
+    approx.begin();
+  }
+}
+
+void loop() {
+  approx.loop();
+}
+
+void onActiveDevice(Device *device, Approximate::DeviceEvent event) {
+  switch (event) {
+    case Approximate::SEND:
+      digitalWrite(LED_PIN, HIGH);
+      Serial.printf("SEND\t%s\tOUI: 0x%06X\tRSSI: %i\t%i bytes\n",
+        device->getMacAddressAsString().c_str(),
+        device->getOUI(), device->getRSSI(),
+        device->getPayloadSizeBytes());
+      break;
+    case Approximate::RECEIVE:
+      digitalWrite(LED_PIN, LOW);
+      Serial.printf("RECV\t%s\tOUI: 0x%06X\tRSSI: %i\t%i bytes\n",
+        device->getMacAddressAsString().c_str(),
+        device->getOUI(), device->getRSSI(),
+        device->getPayloadSizeBytes());
+      break;
+    case Approximate::PROBE:
+      Serial.printf("PROBE\t%s\tOUI: 0x%06X\tRSSI: %i\n",
+        device->getMacAddressAsString().c_str(),
+        device->getOUI(), device->getRSSI());
+      break;
+  }
+}
+```
+
+Unlike `setActiveDeviceFilter()` (which replaces any existing filter), `addActiveDeviceFilter()` builds a list of filters. Filters can be removed individually with `removeActiveDeviceFilter()` or cleared with `removeAllActiveDeviceFilters()`. OUI codes for device manufacturers can be found at http://standards-oui.ieee.org/oui.txt.
 
 ## In Use
 
@@ -415,6 +629,7 @@ The Approximate library has learnt much from the work of others, including:
 * [ESP32 CSI Tool](https://github.com/StevenMHernandez/ESP32-CSI-Tool)
 * [ESP32 gather CSI](https://github.com/jonathanmuller/ESP32-gather-channel-state-information-CSI-)
 * [ESP32 CSI Phase Chart](https://github.com/diegonunesbr/ESP32-CSI-Phase-Chart)
+* IEEE 802.11 frame type reference used for packet parsing improvements
 
 ## Author
 
