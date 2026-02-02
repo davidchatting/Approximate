@@ -225,6 +225,11 @@ typedef struct {
 #define IE_RSN              48
 #define IE_VENDOR_SPECIFIC  221
 
+// Country IE environment field values
+#define IE_COUNTRY_ENVIRONMENT_INDOOR  'I'
+#define IE_COUNTRY_ENVIRONMENT_OUTDOOR 'O'
+#define IE_COUNTRY_ENVIRONMENT_ANY     ' '
+
 // ---- Generic 4-address MAC header ----
 typedef struct {
     wifi_80211_fctl frame_ctrl;

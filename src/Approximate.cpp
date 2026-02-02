@@ -23,6 +23,8 @@ eth_addr Approximate::ownMacAddress = {{0,0,0,0,0,0}};
 
 int Approximate::proximateRSSIThreshold = APPROXIMATE_PERSONAL_RSSI;
 eth_addr Approximate::localBSSID = {{0,0,0,0,0,0}};
+char Approximate::countryCode[3] = {0};
+char Approximate::countryEnvironment = 0;
 List<Filter *> Approximate::activeDeviceFilterList;
 
 List<Device *> Approximate::proximateDeviceList;
@@ -860,6 +862,18 @@ bool Approximate::MacAddr_to_MacAddr(MacAddr *in, MacAddr &out) {
   return(success);
 }
 
+String Approximate::getCountryCode() {
+  return String(countryCode);
+}
+
+char Approximate::getCountryEnvironment() {
+  return countryEnvironment;
+}
+
+bool Approximate::hasCountryInfo() {
+  return (countryCode[0] != 0);
+}
+
 bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
   bool success = false;
 
@@ -963,6 +977,31 @@ bool Approximate::wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, ui
         // Only process if from the local network's BSSID.
         if(eth_addr_cmp(&bssidAddr, &localBSSID)) {
           device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+
+          // Parse Country IE from beacon/probe response body.
+          // Frame body starts after mgmt header with 12 bytes of fixed fields:
+          //   8-byte timestamp + 2-byte beacon interval + 2-byte capability info
+          const size_t fixedFieldsSize = 12;
+          if(len > mgmt_hdr_size + fixedFieldsSize) {
+            const uint8_t *ie_ptr = frame->payload + fixedFieldsSize;
+            size_t ie_remaining = len - mgmt_hdr_size - fixedFieldsSize;
+
+            while(ie_remaining >= 2) {
+              const wifi_80211_ie *ie = (const wifi_80211_ie *) ie_ptr;
+              if(ie_remaining < (size_t)(2 + ie->length)) break;
+
+              if(ie->id == IE_COUNTRY && ie->length >= 3) {
+                countryCode[0] = (char) ie->data[0];
+                countryCode[1] = (char) ie->data[1];
+                countryCode[2] = '\0';
+                countryEnvironment = (char) ie->data[2];
+              }
+
+              ie_ptr += 2 + ie->length;
+              ie_remaining -= 2 + ie->length;
+            }
+          }
+
           success = true;
         }
         break;

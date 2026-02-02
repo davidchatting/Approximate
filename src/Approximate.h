@@ -110,6 +110,8 @@ class Approximate {
     static eth_addr ownMacAddress;
 
     static eth_addr localBSSID;
+    static char countryCode[3];
+    static char countryEnvironment;
     static List<Filter *> activeDeviceFilterList;
     static bool applyDeviceFilters(Device *device);
 
@@ -183,6 +185,10 @@ class Approximate {
     void onceWifiStatus(wl_status_t status, voidFnPtrWithStringPayload callBackFnPtr, String payload);
     void onceWifiStatus(wl_status_t status, voidFnPtrWithBoolPayload callBackFnPtr, bool payload);
     void onceWifiStatus(wl_status_t status, voidFnPtrWithFnPtrPayload callBackFnPtr, voidFnPtr payload);
+
+    static String getCountryCode();
+    static char getCountryEnvironment();
+    static bool hasCountryInfo();
 
     static bool MacAddr_to_eth_addr(MacAddr *in, eth_addr &out);
     static bool uint8_t_to_eth_addr(uint8_t *in, eth_addr &out);
