@@ -921,6 +921,9 @@ bool Approximate::wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, ui
     int rssi = rx_ctrl->rssi;
     int channel = rx_ctrl->channel;
 
+    // Calculate the size of the management frame header
+    const size_t mgmt_hdr_size = sizeof(wifi_80211_mgmt_frame);
+
     switch(subtype) {
       case PROBE_REQ:
         // Probe requests are sent by all WiFi devices scanning for networks.
@@ -928,6 +931,28 @@ bool Approximate::wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, ui
         // Probe requests often have broadcast BSSID (FF:FF:FF:FF:FF:FF).
         device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
         ArpTable::lookupIPAddress(device);
+
+        // Parse Information Elements looking for SSID (IE id 0)
+        if(len > mgmt_hdr_size) {
+          const uint8_t *ie_ptr = frame->payload;
+          size_t ie_remaining = len - mgmt_hdr_size;
+
+          while(ie_remaining >= 2) {
+            const wifi_80211_ie *ie = (const wifi_80211_ie *) ie_ptr;
+            if(ie_remaining < (size_t)(2 + ie->length)) break;
+
+            if(ie->id == IE_SSID && ie->length > 0 && ie->length <= 32) {
+              char ssid_buf[33];
+              memcpy(ssid_buf, ie->data, ie->length);
+              ssid_buf[ie->length] = '\0';
+              device->setSSID(ssid_buf);
+            }
+
+            ie_ptr += 2 + ie->length;
+            ie_remaining -= 2 + ie->length;
+          }
+        }
+
         success = true;
         break;
 

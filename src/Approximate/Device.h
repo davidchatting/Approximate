@@ -23,6 +23,7 @@ class Device : public Network {
         int rssi = APPROXIMATE_UNKNOWN_RSSI;
         long lastSeenAtMs = -1;
         int dataFlowBytes = 0;  //uploading is negative, downloading positive
+        char ssid[33] = {0};
 
         long timeOutAtMs = -1;
 
@@ -50,6 +51,10 @@ class Device : public Network {
         void setIPAddress(ip4_addr_t &ipAddress);
         void setIPAddress(u32_t ipAddress);
         bool hasIPAddress();
+
+        void setSSID(const char *ssid);
+        String getSSIDAsString();
+        bool hasSSID();
 
         void setRSSI(int rssi);
         int getRSSI(bool uploadOnly = true);

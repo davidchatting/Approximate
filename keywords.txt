@@ -66,6 +66,9 @@ getIPAddressAs_c_str	KEYWORD2
 setIPAddress	KEYWORD2
 hasIPAddress	KEYWORD2
 
+getSSIDAsString	KEYWORD2
+hasSSID	KEYWORD2
+
 setRSSI	KEYWORD2
 getRSSI	KEYWORD2
 

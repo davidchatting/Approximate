@@ -16,6 +16,7 @@ Device::Device() {
 
 Device::Device(Device *b) {
     init(b -> macAddress, b -> bssid, b -> channel, b -> rssi, b -> lastSeenAtMs, b -> dataFlowBytes, b -> ipAddress.addr);
+    setSSID(b -> ssid);
 }
 
 Device::Device(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenAtMs, int dataFlowBytes, u32_t ipAddress) {
@@ -38,17 +39,22 @@ bool Device::operator ==(eth_addr &macAddress) {
 void Device::init(eth_addr &macAddress, eth_addr &bssid, int channel, int rssi, long lastSeenAtMs, int dataFlowBytes, u32_t ipAddress) {
     setMacAddress(macAddress);
     setBssid(bssid);
-    
+
     setChannel(channel);
     setRSSI(rssi);
     setLastSeenAtMs(lastSeenAtMs);
     setDataFlowBytes(dataFlowBytes);
 
     setIPAddress(ipAddress);
+
+    ssid[0] = '\0';
 }
 
 void Device::update(Device *d) {
-    if(d) init(d -> macAddress, d -> bssid, d -> channel, d -> rssi, d -> lastSeenAtMs, d -> dataFlowBytes, d -> ipAddress.addr);
+    if(d) {
+        init(d -> macAddress, d -> bssid, d -> channel, d -> rssi, d -> lastSeenAtMs, d -> dataFlowBytes, d -> ipAddress.addr);
+        setSSID(d -> ssid);
+    }
 }
 
 void Device::getMacAddress(eth_addr &macAddress) {
@@ -106,6 +112,24 @@ void Device::setIPAddress(u32_t ipAddress) {
 
 bool Device::hasIPAddress() {
     return(ipAddress.addr != IPADDR_ANY);
+}
+
+void Device::setSSID(const char *ssid) {
+    if(ssid) {
+        strncpy(this->ssid, ssid, 32);
+        this->ssid[32] = '\0';
+    }
+    else {
+        this->ssid[0] = '\0';
+    }
+}
+
+String Device::getSSIDAsString() {
+    return String(ssid);
+}
+
+bool Device::hasSSID() {
+    return(ssid[0] != '\0');
 }
 
 void Device::setRSSI(int rssi) {
