@@ -1,0 +1,63 @@
+{
+  "name": "Approximate",
+  "version": "2.0.0",
+  "description": "A WiFi Arduino library for building proximate interactions between your Internet of Things and the ESP8266 or ESP32. Uses WiFi signal strength (RSSI) to estimate physical distance to network devices, obtaining MAC and IP addresses. Supports management and control frame parsing for improved device detection.",
+  "keywords": "wifi, proximity, rssi, esp8266, esp32, iot, mac-address, signal-strength, promiscuous, csi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidchatting/Approximate.git"
+  },
+  "authors": [
+    {
+      "name": "David Chatting",
+      "email": "approximate@davidchatting.com",
+      "url": "https://github.com/davidchatting",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/davidchatting/Approximate",
+  "frameworks": "arduino",
+  "platforms": [
+    "espressif8266",
+    "espressif32"
+  ],
+  "dependencies": [
+    {
+      "name": "Arduino-List",
+      "version": "https://github.com/davidchatting/Arduino-List.git"
+    }
+  ],
+  "examples": [
+    {
+      "name": "CloseBy",
+      "base": "examples/CloseBy",
+      "files": ["CloseBy.ino"]
+    },
+    {
+      "name": "FindMy",
+      "base": "examples/FindMy",
+      "files": ["FindMy.ino"]
+    },
+    {
+      "name": "WatchDevice",
+      "base": "examples/WatchDevice",
+      "files": ["WatchDevice.ino"]
+    },
+    {
+      "name": "CloseByMQTT",
+      "base": "examples/CloseByMQTT",
+      "files": ["CloseByMQTT.ino"]
+    },
+    {
+      "name": "CloseBySonoff",
+      "base": "examples/CloseBySonoff",
+      "files": ["CloseBySonoff.ino"]
+    },
+    {
+      "name": "MonitorCSI",
+      "base": "examples/MonitorCSI",
+      "files": ["MonitorCSI.ino"]
+    }
+  ]
+}
