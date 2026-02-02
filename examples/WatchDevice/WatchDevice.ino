@@ -21,6 +21,9 @@ Approximate approx;
 
 long ledOnUntilMs = 0;
 
+void onProximateDevice(Device *device, Approximate::DeviceEvent event);
+void onActiveDevice(Device *device, Approximate::DeviceEvent event);
+
 void setup() {
   Serial.begin(9600);
   pinMode(LED_PIN, OUTPUT);

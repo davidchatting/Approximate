@@ -24,6 +24,8 @@ PubSubClient mqttClient(wifiClient);
   const int LED_PIN = 2;
 #endif
 
+void onProximateDevice(Device *device, Approximate::DeviceEvent event);
+
 void setup() {
   Serial.begin(9600);
   pinMode(LED_PIN, OUTPUT);
