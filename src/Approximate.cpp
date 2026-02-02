@@ -499,14 +499,13 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
 bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type, int subtype) {
   bool result = false;
 
-  //TODO: is this still needed?
   if( wifi_pkt -> rx_ctrl.sig_mode == 1 && len > 512) {
     type = PKT_DATA;
   }
 
   switch (type) {
-    case PKT_MGMT: result = parseMgmtPacket(wifi_pkt); break;
-    case PKT_CTRL: result = parseCtrlPacket(wifi_pkt); break;
+    case PKT_MGMT: result = parseMgmtPacket(wifi_pkt, len, subtype); break;
+    case PKT_CTRL: result = parseCtrlPacket(wifi_pkt, len, subtype); break;
     case PKT_DATA: result = parseDataPacket(wifi_pkt, len); break;
     case PKT_MISC: result = parseMiscPacket(wifi_pkt); break;
   }
@@ -514,12 +513,86 @@ bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, in
   return(result);
 }
 
-bool Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
-  return(false);
+bool Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype) {
+  bool result = false;
+
+  Device *device = new Device();
+  if(wifi_ctrl_frame_to_Device(wifi_pkt, len, subtype, device)) {
+    if(!device->matches(ownMacAddress) && (!onlyIndividualDevices || device->isIndividual())) {
+      result = true;
+
+      if(proximateDeviceHandler) {
+        Device *proximateDevice = Approximate::getProximateDevice(device);
+        int rssi = device->getRSSI();
+
+        if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
+          if(rssi > proximateRSSIThreshold) {
+            if(proximateDevice) {
+              proximateDevice->update(device);
+            }
+            else {
+              proximateDevice = new Device(device);
+              proximateDeviceList.Add(proximateDevice);
+              proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+            }
+            proximateDeviceHandler(proximateDevice, Approximate::PROBE);
+            proximateDevice->setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+          }
+          else {
+            if(proximateDevice) proximateDevice->update(device);
+          }
+        }
+      }
+
+      if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+        activeDeviceHandler(device, Approximate::PROBE);
+      }
+    }
+  }
+  delete(device);
+
+  return(result);
 }
 
-bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
-  return(false);
+bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype) {
+  bool result = false;
+
+  Device *device = new Device();
+  if(wifi_mgmt_frame_to_Device(wifi_pkt, len, subtype, device)) {
+    if(!device->matches(ownMacAddress) && (!onlyIndividualDevices || device->isIndividual())) {
+      result = true;
+
+      if(proximateDeviceHandler) {
+        Device *proximateDevice = Approximate::getProximateDevice(device);
+        int rssi = device->getRSSI();
+
+        if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
+          if(rssi > proximateRSSIThreshold) {
+            if(proximateDevice) {
+              proximateDevice->update(device);
+            }
+            else {
+              proximateDevice = new Device(device);
+              proximateDeviceList.Add(proximateDevice);
+              proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+            }
+            proximateDeviceHandler(proximateDevice, Approximate::PROBE);
+            proximateDevice->setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+          }
+          else {
+            if(proximateDevice) proximateDevice->update(device);
+          }
+        }
+      }
+
+      if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+        activeDeviceHandler(device, Approximate::PROBE);
+      }
+    }
+  }
+  delete(device);
+
+  return(result);
 }
 
 bool Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes) {
@@ -822,6 +895,122 @@ bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pk
   }
   delete(packet);
   
+  return(success);
+}
+
+bool Approximate::wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype, Device *device) {
+  bool success = false;
+
+  if(wifi_pkt && device) {
+    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
+
+    // Management frame header: Addr1=DA, Addr2=SA (transmitter), Addr3=BSSID
+    wifi_80211_mgmt_frame *frame = (wifi_80211_mgmt_frame *) wifi_pkt->payload;
+
+    eth_addr srcAddr;
+    MacAddr_to_eth_addr(&(frame->addr2), srcAddr);
+
+    // Skip broadcast/multicast source addresses
+    if(srcAddr.addr[0] & 0x01) return false;
+    // Skip junk MACs (last 3 bytes all zero)
+    if(srcAddr.addr[3] == 0x0 && srcAddr.addr[4] == 0x0 && srcAddr.addr[5] == 0x0) return false;
+
+    eth_addr bssidAddr;
+    MacAddr_to_eth_addr(&(frame->addr3), bssidAddr);
+
+    int rssi = rx_ctrl->rssi;
+    int channel = rx_ctrl->channel;
+
+    switch(subtype) {
+      case PROBE_REQ:
+        // Probe requests are sent by all WiFi devices scanning for networks.
+        // The source MAC (addr2) is the device transmitting the probe.
+        // Probe requests often have broadcast BSSID (FF:FF:FF:FF:FF:FF).
+        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+        ArpTable::lookupIPAddress(device);
+        success = true;
+        break;
+
+      case PROBE_RES:
+      case BEACON:
+        // Probe responses and beacons are sent by APs.
+        // Addr2=SA is the AP's MAC, Addr3=BSSID is the network BSSID.
+        // Only process if from the local network's BSSID.
+        if(eth_addr_cmp(&bssidAddr, &localBSSID)) {
+          device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+          success = true;
+        }
+        break;
+
+      case AUTHENTICATION:
+      case ASSOCIATION_REQ:
+      case REASSOCIATION_REQ:
+        // Auth/assoc requests from clients contain the client's MAC in addr2.
+        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+        ArpTable::lookupIPAddress(device);
+        success = true;
+        break;
+
+      case DEAUTHENTICATION:
+      case DISASSOCIATION:
+        // Deauth/disassoc frames - the source addr2 is the sender.
+        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+        success = true;
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return(success);
+}
+
+bool Approximate::wifi_ctrl_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype, Device *device) {
+  bool success = false;
+
+  if(wifi_pkt && device) {
+    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
+    int rssi = rx_ctrl->rssi;
+    int channel = rx_ctrl->channel;
+
+    eth_addr deviceAddr;
+    eth_addr emptyBssid = {{0,0,0,0,0,0}};
+
+    switch(subtype) {
+      case CTRL_RTS:
+      case CTRL_BLOCK_ACK_REQ:
+      case CTRL_BLOCK_ACK:
+      case CTRL_PS_POLL: {
+        // These frames have both RA (addr1) and TA (addr2).
+        // The transmitter address (addr2) identifies the sending device.
+        wifi_80211_ctrl_rts_frame *frame = (wifi_80211_ctrl_rts_frame *) wifi_pkt->payload;
+        MacAddr_to_eth_addr(&(frame->addr2), deviceAddr);
+
+        // Skip broadcast/multicast
+        if(deviceAddr.addr[0] & 0x01) return false;
+        if(deviceAddr.addr[3] == 0x0 && deviceAddr.addr[4] == 0x0 && deviceAddr.addr[5] == 0x0) return false;
+
+        device->init(deviceAddr, emptyBssid, channel, rssi, millis(), 0);
+        ArpTable::lookupIPAddress(device);
+        success = true;
+        break;
+      }
+
+      case CTRL_CTS:
+      case CTRL_ACK: {
+        // CTS and ACK frames have only RA (addr1) - the receiver address.
+        // The RSSI is from the device that transmitted this frame, but we only
+        // know who they're talking TO (the RA). We skip these since we can't
+        // reliably identify the transmitter.
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
   return(success);
 }
 

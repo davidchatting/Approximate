@@ -43,7 +43,8 @@ class Approximate {
       DEPART,
       SEND,
       RECEIVE,
-      INACTIVE
+      INACTIVE,
+      PROBE       // Device detected via management frame (probe request/beacon)
     } DeviceEvent;
 
     typedef void (*DeviceHandler)(Device *device, DeviceEvent event);
@@ -55,6 +56,7 @@ class Approximate {
         case Approximate::RECEIVE:    return("RECEIVE");
         case Approximate::ARRIVE:     return("ARRIVE");
         case Approximate::DEPART:     return("DEPART");
+        case Approximate::PROBE:      return("PROBE");
         default:                      return("INACTIVE");
       }
     }
@@ -89,10 +91,13 @@ class Approximate {
     wl_status_t triggerWifiStatus = WL_IDLE_STATUS;
 
     static bool parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type, int subtype);
-    static bool parseMgmtPacket(wifi_promiscuous_pkt_t *pkt);
-    static bool parseCtrlPacket(wifi_promiscuous_pkt_t *pkt);
+    static bool parseMgmtPacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype);
+    static bool parseCtrlPacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype);
     static bool parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
     static bool parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
+
+    static bool wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype, Device *device);
+    static bool wifi_ctrl_frame_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype, Device *device);
 
     static void parseChannelStateInformation(wifi_csi_info_t *info);
 
