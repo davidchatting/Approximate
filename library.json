@@ -25,7 +25,7 @@
   "dependencies": [
     {
       "name": "Arduino-List",
-      "version": "https://github.com/davidchatting/Arduino-List.git"
+      "version": "https://github.com/luisllamasbinaburo/Arduino-List.git"
     }
   ],
   "examples": [
@@ -58,21 +58,6 @@
       "name": "MonitorCSI",
       "base": "examples/MonitorCSI",
       "files": ["MonitorCSI.ino"]
-    },
-    {
-      "name": "ProbeDetect",
-      "base": "examples/ProbeDetect",
-      "files": ["ProbeDetect.ino"]
-    },
-    {
-      "name": "ProximityZones",
-      "base": "examples/ProximityZones",
-      "files": ["ProximityZones.ino"]
-    },
-    {
-      "name": "DeviceFilter",
-      "base": "examples/DeviceFilter",
-      "files": ["DeviceFilter.ino"]
     }
   ]
 }
