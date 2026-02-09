@@ -159,23 +159,9 @@ void Approximate::onceWifiStatus(wl_status_t status, voidFnPtrWithFnPtrPayload c
 void Approximate::begin(voidFnPtr thenFnPtr) {
   Serial.println("Approximate::begin");
 
-  onceWifiStatus(WL_CONNECTED, [](voidFnPtr thenFnPtr) {
-    if(thenFnPtr) thenFnPtr();
+  beginThenFnPtr = thenFnPtr;
+  beginPending = true;
 
-    if(arpTable) {
-      arpTable -> scan(); //blocking
-      arpTable -> begin();
-    }
-
-    #if defined(ESP8266)
-      WiFi.disconnect();
-    #endif
-
-    //start the packetSniffer after the scan is complete:
-    if(packetSniffer)  packetSniffer -> begin();
-
-    running = true;
-  }, thenFnPtr);
   connectWiFi();
   Serial.println("Approximate::begin DONE");
 }
@@ -211,6 +197,31 @@ bool Approximate::isRunning() {
 }
 
 void Approximate::onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus) {
+  // Handle begin() initialization independently of onceWifiStatus callbacks,
+  // so user-registered callbacks cannot override ARP scanning (issue #32).
+  if(beginPending && newStatus == WL_CONNECTED) {
+    beginPending = false;
+
+    if(beginThenFnPtr) {
+      beginThenFnPtr();
+      beginThenFnPtr = NULL;
+    }
+
+    if(arpTable) {
+      arpTable -> scan(); //blocking
+      arpTable -> begin();
+    }
+
+    #if defined(ESP8266)
+      WiFi.disconnect();
+    #endif
+
+    //start the packetSniffer after the scan is complete:
+    if(packetSniffer)  packetSniffer -> begin();
+
+    running = true;
+  }
+
   if(newStatus != WL_IDLE_STATUS && newStatus == triggerWifiStatus) {
     if(onceWifiStatusFnPtr != NULL ) {
       onceWifiStatusFnPtr();
@@ -251,8 +262,9 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
 
       #elif defined(ESP32)
         //WiFi.begin() for the ESP32 (1.0.4) > https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFiSTA.cpp - doesn't call esp_wifi_init() or esp_wifi_start() - which are needed later for esp_wifi_set_csi()
-        tcpip_adapter_init();
-        esp_event_loop_init(NULL, NULL);
+        esp_netif_init();
+        esp_event_loop_create_default();
+        esp_netif_create_default_wifi_sta();
 
         if(!WiFi.enableSTA(true)) {
             log_e("STA enable failed!");
@@ -291,7 +303,8 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
         }
         esp_wifi_set_config(WIFI_IF_STA, &conf);
 
-        if(tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA) == ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED){
+        esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+        if(sta_netif && esp_netif_dhcpc_start(sta_netif) == ESP_ERR_ESP_NETIF_DHCPC_START_FAILED){
             log_e("dhcp client start failed!");
             return WL_CONNECT_FAILED;
         }

@@ -51,8 +51,9 @@ bool PacketSniffer::begin() {
         }
       #endif
 
-      tcpip_adapter_init();
-      esp_event_loop_init(NULL, NULL);
+      esp_netif_init();
+      esp_event_loop_create_default();
+      esp_netif_create_default_wifi_sta();
 
       wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
       esp_wifi_init(&cfg);

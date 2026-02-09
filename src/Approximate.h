@@ -72,6 +72,7 @@ class Approximate {
     char *password = new char[64];
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
+
     bool initBlind(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     bool initBlind(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
@@ -89,6 +90,9 @@ class Approximate {
     bool onceWifiStatusBoolPayload;
     voidFnPtr onceWifiStatusFnPtrPayload;
     wl_status_t triggerWifiStatus = WL_IDLE_STATUS;
+
+    bool beginPending = false;
+    voidFnPtr beginThenFnPtr = NULL;
 
     static bool parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type, int subtype);
     static bool parseMgmtPacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype);
