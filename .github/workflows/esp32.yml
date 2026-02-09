@@ -1,5 +1,5 @@
 name: esp32
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 jobs:
   build:
     name: Test compile examples for esp32
