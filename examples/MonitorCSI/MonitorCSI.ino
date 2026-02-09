@@ -8,6 +8,8 @@
 #include <Approximate.h>
 Approximate approx;
 
+void onChannelStateEvent(Channel *channel);
+
 void setup() {
     Serial.begin(9600);
 

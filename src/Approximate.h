@@ -4,6 +4,7 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) October 2020
+    Updated 2026
 */
 
 #ifndef Approximate_h
@@ -42,7 +43,8 @@ class Approximate {
       DEPART,
       SEND,
       RECEIVE,
-      INACTIVE
+      INACTIVE,
+      PROBE       // Device detected via management frame (probe request/beacon)
     } DeviceEvent;
 
     typedef void (*DeviceHandler)(Device *device, DeviceEvent event);
@@ -54,6 +56,7 @@ class Approximate {
         case Approximate::RECEIVE:    return("RECEIVE");
         case Approximate::ARRIVE:     return("ARRIVE");
         case Approximate::DEPART:     return("DEPART");
+        case Approximate::PROBE:      return("PROBE");
         default:                      return("INACTIVE");
       }
     }
@@ -69,6 +72,7 @@ class Approximate {
     char *password = new char[64];
 
     wl_status_t currentWifiStatus = WL_IDLE_STATUS;
+
     bool initBlind(int channel, uint8_t *bssid, bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     bool initBlind(bool ipAddressResolution, bool csiEnabled, bool onlyIndividualDevices);
     void onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus);
@@ -87,9 +91,12 @@ class Approximate {
     voidFnPtr onceWifiStatusFnPtrPayload;
     wl_status_t triggerWifiStatus = WL_IDLE_STATUS;
 
+    bool beginPending = false;
+    voidFnPtr beginThenFnPtr = NULL;
+
     static bool parsePacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int type, int subtype);
-    static bool parseMgmtPacket(wifi_promiscuous_pkt_t *pkt);
-    static bool parseCtrlPacket(wifi_promiscuous_pkt_t *pkt);
+    static bool parseMgmtPacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype);
+    static bool parseCtrlPacket(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype);
     static bool parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
     static bool parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
 
@@ -114,9 +121,6 @@ class Approximate {
     static int proximateLastSeenTimeoutMs;
 
     void printWiFiStatus();
-
-    static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
-    static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
 
   public:
     Approximate();
@@ -177,6 +181,10 @@ class Approximate {
     void onceWifiStatus(wl_status_t status, voidFnPtrWithStringPayload callBackFnPtr, String payload);
     void onceWifiStatus(wl_status_t status, voidFnPtrWithBoolPayload callBackFnPtr, bool payload);
     void onceWifiStatus(wl_status_t status, voidFnPtrWithFnPtrPayload callBackFnPtr, voidFnPtr payload);
+
+    static String getCountryCode();
+    static char getCountryEnvironment();
+    static bool hasCountryInfo();
 
     static bool MacAddr_to_eth_addr(MacAddr *in, eth_addr &out);
     static bool uint8_t_to_eth_addr(uint8_t *in, eth_addr &out);

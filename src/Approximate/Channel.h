@@ -4,6 +4,7 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) February 2021
+    Updated 2026
 */
 
 #ifndef Channel_h

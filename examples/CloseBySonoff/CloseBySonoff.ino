@@ -34,6 +34,11 @@ using namespace ace_button;
 
 Device *closeBySonoff = NULL;
 
+void onProximateDevice(Device *device, Approximate::DeviceEvent event);
+void onCloseBySonoff(Device *device, Approximate::DeviceEvent event);
+void onButtonEvent(AceButton* button, uint8_t eventType, uint8_t buttonState);
+void switchCloseBySonoff(bool switchState);
+
 void setup() {
   Serial.begin(9600);
 

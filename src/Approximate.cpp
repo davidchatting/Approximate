@@ -4,6 +4,7 @@
     -
     David Chatting - github.com/davidchatting/Approximate
     MIT License - Copyright (c) October 2020
+    Updated 2026
 */
 
 #include "Approximate.h"
@@ -158,23 +159,9 @@ void Approximate::onceWifiStatus(wl_status_t status, voidFnPtrWithFnPtrPayload c
 void Approximate::begin(voidFnPtr thenFnPtr) {
   Serial.println("Approximate::begin");
 
-  onceWifiStatus(WL_CONNECTED, [](voidFnPtr thenFnPtr) {
-    if(thenFnPtr) thenFnPtr();
+  beginThenFnPtr = thenFnPtr;
+  beginPending = true;
 
-    if(arpTable) {
-      arpTable -> scan(); //blocking
-      arpTable -> begin();
-    }
-
-    #if defined(ESP8266)
-      WiFi.disconnect();
-    #endif
-
-    //start the packetSniffer after the scan is complete:
-    if(packetSniffer)  packetSniffer -> begin();
-
-    running = true;
-  }, thenFnPtr);
   connectWiFi();
   Serial.println("Approximate::begin DONE");
 }
@@ -210,6 +197,31 @@ bool Approximate::isRunning() {
 }
 
 void Approximate::onWifiStatusChange(wl_status_t oldStatus, wl_status_t newStatus) {
+  // Handle begin() initialization independently of onceWifiStatus callbacks,
+  // so user-registered callbacks cannot override ARP scanning (issue #32).
+  if(beginPending && newStatus == WL_CONNECTED) {
+    beginPending = false;
+
+    if(beginThenFnPtr) {
+      beginThenFnPtr();
+      beginThenFnPtr = NULL;
+    }
+
+    if(arpTable) {
+      arpTable -> scan(); //blocking
+      arpTable -> begin();
+    }
+
+    #if defined(ESP8266)
+      WiFi.disconnect();
+    #endif
+
+    //start the packetSniffer after the scan is complete:
+    if(packetSniffer)  packetSniffer -> begin();
+
+    running = true;
+  }
+
   if(newStatus != WL_IDLE_STATUS && newStatus == triggerWifiStatus) {
     if(onceWifiStatusFnPtr != NULL ) {
       onceWifiStatusFnPtr();
@@ -250,8 +262,9 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
 
       #elif defined(ESP32)
         //WiFi.begin() for the ESP32 (1.0.4) > https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFiSTA.cpp - doesn't call esp_wifi_init() or esp_wifi_start() - which are needed later for esp_wifi_set_csi()
-        tcpip_adapter_init();
-        esp_event_loop_init(NULL, NULL);
+        esp_netif_init();
+        esp_event_loop_create_default();
+        esp_netif_create_default_wifi_sta();
 
         if(!WiFi.enableSTA(true)) {
             log_e("STA enable failed!");
@@ -290,7 +303,8 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
         }
         esp_wifi_set_config(WIFI_IF_STA, &conf);
 
-        if(tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA) == ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED){
+        esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+        if(sta_netif && esp_netif_dhcpc_start(sta_netif) == ESP_ERR_ESP_NETIF_DHCPC_START_FAILED){
             log_e("dhcp client start failed!");
             return WL_CONNECT_FAILED;
         }
@@ -468,6 +482,7 @@ void Approximate::setLocalBSSID(String macAddress) {
 
 void Approximate::setLocalBSSID(eth_addr &macAddress) {
   ETHADDR16_COPY(&this -> localBSSID, &macAddress);
+  if(packetSniffer) PacketSniffer::setLocalBSSID(macAddress);
 }
 
 void Approximate::setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive) {
@@ -498,14 +513,9 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
 bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type, int subtype) {
   bool result = false;
 
-  //TODO: is this still needed?
-  if( wifi_pkt -> rx_ctrl.sig_mode == 1 && len > 512) {
-    type = PKT_DATA;
-  }
-
   switch (type) {
-    case PKT_MGMT: result = parseMgmtPacket(wifi_pkt); break;
-    case PKT_CTRL: result = parseCtrlPacket(wifi_pkt); break;
+    case PKT_MGMT: result = parseMgmtPacket(wifi_pkt, len, subtype); break;
+    case PKT_CTRL: result = parseCtrlPacket(wifi_pkt, len, subtype); break;
     case PKT_DATA: result = parseDataPacket(wifi_pkt, len); break;
     case PKT_MISC: result = parseMiscPacket(wifi_pkt); break;
   }
@@ -513,19 +523,93 @@ bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, in
   return(result);
 }
 
-bool Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
-  return(false);
+bool Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype) {
+  bool result = false;
+
+  Device *device = new Device();
+  if(PacketSniffer::parseCtrlFrame(wifi_pkt, len, subtype, device)) {
+    if(!device->matches(ownMacAddress) && (!onlyIndividualDevices || device->isIndividual())) {
+      result = true;
+
+      if(proximateDeviceHandler) {
+        Device *proximateDevice = Approximate::getProximateDevice(device);
+        int rssi = device->getRSSI();
+
+        if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
+          if(rssi > proximateRSSIThreshold) {
+            if(proximateDevice) {
+              proximateDevice->update(device);
+            }
+            else {
+              proximateDevice = new Device(device);
+              proximateDeviceList.Add(proximateDevice);
+              proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+            }
+            proximateDeviceHandler(proximateDevice, Approximate::PROBE);
+            proximateDevice->setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+          }
+          else {
+            if(proximateDevice) proximateDevice->update(device);
+          }
+        }
+      }
+
+      if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+        activeDeviceHandler(device, Approximate::PROBE);
+      }
+    }
+  }
+  delete(device);
+
+  return(result);
 }
 
-bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt) {
-  return(false);
+bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype) {
+  bool result = false;
+
+  Device *device = new Device();
+  if(PacketSniffer::parseMgmtFrame(wifi_pkt, len, subtype, device)) {
+    if(!device->matches(ownMacAddress) && (!onlyIndividualDevices || device->isIndividual())) {
+      result = true;
+
+      if(proximateDeviceHandler) {
+        Device *proximateDevice = Approximate::getProximateDevice(device);
+        int rssi = device->getRSSI();
+
+        if(rssi != APPROXIMATE_UNKNOWN_RSSI) {
+          if(rssi > proximateRSSIThreshold) {
+            if(proximateDevice) {
+              proximateDevice->update(device);
+            }
+            else {
+              proximateDevice = new Device(device);
+              proximateDeviceList.Add(proximateDevice);
+              proximateDeviceHandler(proximateDevice, Approximate::ARRIVE);
+            }
+            proximateDeviceHandler(proximateDevice, Approximate::PROBE);
+            proximateDevice->setTimeOutAtMs(millis() + proximateLastSeenTimeoutMs);
+          }
+          else {
+            if(proximateDevice) proximateDevice->update(device);
+          }
+        }
+      }
+
+      if(activeDeviceHandler && (activeDeviceFilterList.IsEmpty() || applyDeviceFilters(device))) {
+        activeDeviceHandler(device, Approximate::PROBE);
+      }
+    }
+  }
+  delete(device);
+
+  return(result);
 }
 
 bool Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes) {
   bool result = false;
 
   Device *device = new Device();
-  if(Approximate::wifi_promiscuous_pkt_to_Device(wifi_pkt, payloadLengthBytes, device)) {
+  if(PacketSniffer::parseDataFrame(wifi_pkt, payloadLengthBytes, device)) {
     if(!device -> matches(ownMacAddress) && (!onlyIndividualDevices || device -> isIndividual())) {
       result = true;
       if(proximateDeviceHandler) {
@@ -572,7 +656,7 @@ void Approximate::parseChannelStateInformation(wifi_csi_info_t *info) {
   #if defined(ESP32)
     if(channelStateHandler) {
       Channel *channel = new Channel();
-      if(wifi_csi_info_to_Channel(info, channel)) {
+      if(PacketSniffer::parseCSI(info, channel)) {
         //TODO: apply filtering
         channelStateHandler(channel);
       }
@@ -661,186 +745,59 @@ bool Approximate::canResolve(ip4_addr_t &ipaddr) {
   return(result);
 }
 
+// MAC utility static methods - delegate to free functions for API compatibility
 bool Approximate::MacAddr_to_eth_addr(MacAddr *in, eth_addr &out) {
-  bool success = true;
-
-  for(int n=0; n<6; ++n) out.addr[n] = in->mac[n];
-
-  return(success);
+  return ::MacAddr_to_eth_addr(in, out);
 }
 
 bool Approximate::uint8_t_to_eth_addr(uint8_t *in, eth_addr &out) {
-  bool success = true;
-
-  for(int n=0; n<6; ++n) out.addr[n] = in[n];
-
-  return(success);
+  return ::uint8_t_to_eth_addr(in, out);
 }
 
 bool Approximate::oui_to_eth_addr(int oui, eth_addr &out) {
-  bool success = true;
-
-  out.addr[0] = (oui >> 16) & 0xFF;
-  out.addr[1] = (oui >> 8) & 0xFF;
-  out.addr[2] = (oui >> 0) & 0xFF;
-  out.addr[3] = 0xFF;
-  out.addr[4] = 0xFF;
-  out.addr[5] = 0xFF;
-
-  return(success);
+  return ::oui_to_eth_addr(oui, out);
 }
 
 bool Approximate::String_to_eth_addr(String &in, eth_addr &out) {
-  bool success = c_str_to_eth_addr(in.c_str(), out);
-
-  return(success);
+  return ::String_to_eth_addr(in, out);
 }
 
 bool Approximate::c_str_to_eth_addr(const char *in, eth_addr &out) {
-  bool success = false;
-
-  //clear:
-  for(int n=0; n<6; ++n) out.addr[n] = 0;
-
-  //basic format test ##:##:##:##:##:##
-  if(strlen(in) == 17) {
-    int a, b, c, d, e, f;
-    sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
-
-    out.addr[0] = a;
-    out.addr[1] = b;
-    out.addr[2] = c;
-    out.addr[3] = d;
-    out.addr[4] = e;
-    out.addr[5] = f;
-
-    success = true;
-  }
-
-  return(success);
+  return ::c_str_to_eth_addr(in, out);
 }
 
 bool Approximate::c_str_to_MacAddr(const char *in, MacAddr &out) {
-  bool success = false;
-
-  //clear:
-  for(int n=0; n<6; ++n) out.mac[n] = 0;
-
-  //basic format test ##:##:##:##:##:##
-  if(strlen(in) == 17) {
-    int a, b, c, d, e, f;
-    sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
-
-    out.mac[0] = a;
-    out.mac[1] = b;
-    out.mac[2] = c;
-    out.mac[3] = d;
-    out.mac[4] = e;
-    out.mac[5] = f;
-    
-    success = true;
-  } 
-
-  return(success);
+  return ::c_str_to_MacAddr(in, out);
 }
 
 bool Approximate::eth_addr_to_String(eth_addr &in, String &out) {
-  bool success = true;
-
-  char macAddressAsCharArray[18];
-  eth_addr_to_c_str(in, macAddressAsCharArray);
-  out = String(macAddressAsCharArray);
-
-  return(success);
+  return ::eth_addr_to_String(in, out);
 }
 
 bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
-  bool success = true;
-
-  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
-
-  return(success);
+  return ::eth_addr_to_c_str(in, out);
 }
 
 bool Approximate::MacAddr_to_c_str(MacAddr *in, char *out) {
-  bool success = true;
-
-  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in->mac[0], in->mac[1], in->mac[2], in->mac[3], in->mac[4], in->mac[5]);
-
-  return(success);
+  return ::MacAddr_to_c_str(in, out);
 }
 
 bool Approximate::MacAddr_to_oui(MacAddr *in, int &out) {
-  bool success = true;
-
-  out = ((in->mac[0] << 16) & 0xFF0000) | ((in->mac[1] << 8) & 0xFF00) | ((in->mac[2] << 0) & 0xFF);
-
-  return(success);
+  return ::MacAddr_to_oui(in, out);
 }
 
 bool Approximate::MacAddr_to_MacAddr(MacAddr *in, MacAddr &out) {
-  bool success = true;
-
-  for(int n=0; n<6; ++n) out.mac[n] = in -> mac[n];
-
-  return(success);
+  return ::MacAddr_to_MacAddr(in, out);
 }
 
-bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
-  bool success = false;
-
-  Packet *packet = new Packet();
-  if(wifi_pkt && device && packet) {
-    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt -> rx_ctrl);
-    packet -> rssi = rx_ctrl->rssi;
-    packet -> channel = rx_ctrl->channel;
-    packet -> payloadLengthBytes = payloadLengthBytes;
-
-    //802.11 packet
-    wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
-    MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
-    MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
-
-    wifi_80211_fctl *fctl = &(frame -> fctl);
-    byte ds = fctl -> ds;
-    if(ds == 1 && eth_addr_cmp(&(packet -> dst), &localBSSID)) {
-      //packet sent by this device
-      device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
-      ArpTable::lookupIPAddress(device);
-      success = true;
-    }
-    else if(ds == 2 && eth_addr_cmp(&(packet -> src), &localBSSID)) {
-      //packet sent to this device - RSSI only informative for messages from device
-      device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
-      ArpTable::lookupIPAddress(device);
-      success = true;
-    }
-    else {
-      //not associated with this bssid - not on this network
-    }
-  }
-  delete(packet);
-  
-  return(success);
+String Approximate::getCountryCode() {
+  return PacketSniffer::getCountryCode();
 }
 
-bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel) {
-  bool success = false;
+char Approximate::getCountryEnvironment() {
+  return PacketSniffer::getCountryEnvironment();
+}
 
-  #if defined(ESP32)
-    if(info->len >= 128) {
-      eth_addr thisBssid;
-      uint8_t_to_eth_addr(info -> mac, thisBssid);
-
-      //Filter this network:
-      if(eth_addr_cmp(&thisBssid, &localBSSID)) {
-        channel -> setBssid(thisBssid);
-        channel -> setBuffer(info->buf);
-
-        success = true;
-      }
-    }
-  #endif
-
-  return(success);
+bool Approximate::hasCountryInfo() {
+  return PacketSniffer::hasCountryInfo();
 }

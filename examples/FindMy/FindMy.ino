@@ -22,6 +22,8 @@ bool ledState = LOW;
 long ledToggleAtMs = 0;
 int ledToggleIntervalMs = 0;
 
+void onActiveDevice(Device *device, Approximate::DeviceEvent event);
+
 void setup() {
   Serial.begin(9600);
   pinMode(LED_PIN, OUTPUT);
