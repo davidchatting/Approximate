@@ -500,10 +500,6 @@ void Approximate::setChannelStateHandler(ChannelStateHandler channelStateHandler
 bool Approximate::parsePacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int type, int subtype) {
   bool result = false;
 
-  if( wifi_pkt -> rx_ctrl.sig_mode == 1 && len > 512) {
-    type = PKT_DATA;
-  }
-
   switch (type) {
     case PKT_MGMT: result = parseMgmtPacket(wifi_pkt, len, subtype); break;
     case PKT_CTRL: result = parseCtrlPacket(wifi_pkt, len, subtype); break;

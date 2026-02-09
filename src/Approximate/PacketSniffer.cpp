@@ -183,9 +183,22 @@ void PacketSniffer::setChannelEventHandler(ChannelEventHandler channelEventHandl
   this -> channelEventHandler = channelEventHandler;
 }
 
+uint8_t* PacketSniffer::getFrameStart(wifi_promiscuous_pkt_t *pkt) {
+  #if defined(ESP8266)
+    // 802.11n AMPDU subframes have a 4-byte delimiter (MPDU length + CRC +
+    // signature 0x4E) before the actual MAC header. When the Aggregation bit
+    // is set in rx_ctrl, skip the delimiter so frame control and MAC addresses
+    // are read from the correct offset.
+    if(pkt->rx_ctrl.Aggregation) {
+      return pkt->payload + 4;
+    }
+  #endif
+  return pkt->payload;
+}
+
 void PacketSniffer::rxCallback_8266(uint8_t *buf, uint16_t len) {
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *) buf;
-  wifi_80211_data_frame *frame = (wifi_80211_data_frame *) (packet -> payload);
+  wifi_80211_data_frame *frame = (wifi_80211_data_frame *) getFrameStart(packet);
   wifi_promiscuous_pkt_type_t type = frame->fctl.type;
   int subtype = frame->fctl.subtype;
 
@@ -199,7 +212,7 @@ void PacketSniffer::rxCallback_8266(uint8_t *buf, uint16_t len) {
 
 void PacketSniffer::rxCallback_32(void* buf, wifi_promiscuous_pkt_type_t type) {
   wifi_promiscuous_pkt_t *packet = (wifi_promiscuous_pkt_t *) buf;
-  wifi_80211_data_frame *frame = (wifi_80211_data_frame *) (packet -> payload);
+  wifi_80211_data_frame *frame = (wifi_80211_data_frame *) getFrameStart(packet);
   int subtype = frame->fctl.subtype;
 
   uint16_t sig_len = 0;
@@ -245,7 +258,7 @@ bool PacketSniffer::parseMgmtFrame(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t le
     wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
 
     // Management frame header: Addr1=DA, Addr2=SA (transmitter), Addr3=BSSID
-    wifi_80211_mgmt_frame *frame = (wifi_80211_mgmt_frame *) wifi_pkt->payload;
+    wifi_80211_mgmt_frame *frame = (wifi_80211_mgmt_frame *) getFrameStart(wifi_pkt);
 
     eth_addr srcAddr;
     MacAddr_to_eth_addr(&(frame->addr2), srcAddr);
@@ -374,7 +387,7 @@ bool PacketSniffer::parseCtrlFrame(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t le
       case CTRL_PS_POLL: {
         // These frames have both RA (addr1) and TA (addr2).
         // The transmitter address (addr2) identifies the sending device.
-        wifi_80211_ctrl_rts_frame *frame = (wifi_80211_ctrl_rts_frame *) wifi_pkt->payload;
+        wifi_80211_ctrl_rts_frame *frame = (wifi_80211_ctrl_rts_frame *) getFrameStart(wifi_pkt);
         MacAddr_to_eth_addr(&(frame->addr2), deviceAddr);
 
         // Skip broadcast/multicast
@@ -415,7 +428,7 @@ bool PacketSniffer::parseDataFrame(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t pa
     packet -> payloadLengthBytes = payloadLengthBytes;
 
     //802.11 packet
-    wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
+    wifi_80211_data_frame* frame = (wifi_80211_data_frame*) getFrameStart(wifi_pkt);
     MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
     MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
 

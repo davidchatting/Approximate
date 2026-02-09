@@ -73,6 +73,10 @@ class PacketSniffer {
 
     static void csiCallback_32(void *ctx, wifi_csi_info_t *data);
 
+    // Returns pointer to start of 802.11 MAC frame within the packet payload.
+    // On ESP8266, AMPDU subframes have a 4-byte delimiter before the MAC header.
+    static uint8_t* getFrameStart(wifi_promiscuous_pkt_t *pkt);
+
     static PacketEventHandler packetEventHandler;
     static ChannelEventHandler channelEventHandler;
 
