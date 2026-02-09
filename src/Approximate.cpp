@@ -23,8 +23,6 @@ eth_addr Approximate::ownMacAddress = {{0,0,0,0,0,0}};
 
 int Approximate::proximateRSSIThreshold = APPROXIMATE_PERSONAL_RSSI;
 eth_addr Approximate::localBSSID = {{0,0,0,0,0,0}};
-char Approximate::countryCode[3] = {0};
-char Approximate::countryEnvironment = 0;
 List<Filter *> Approximate::activeDeviceFilterList;
 
 List<Device *> Approximate::proximateDeviceList;
@@ -471,6 +469,7 @@ void Approximate::setLocalBSSID(String macAddress) {
 
 void Approximate::setLocalBSSID(eth_addr &macAddress) {
   ETHADDR16_COPY(&this -> localBSSID, &macAddress);
+  if(packetSniffer) PacketSniffer::setLocalBSSID(macAddress);
 }
 
 void Approximate::setActiveDeviceHandler(DeviceHandler activeDeviceHandler, bool inclusive) {
@@ -519,7 +518,7 @@ bool Approximate::parseCtrlPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len
   bool result = false;
 
   Device *device = new Device();
-  if(wifi_ctrl_frame_to_Device(wifi_pkt, len, subtype, device)) {
+  if(PacketSniffer::parseCtrlFrame(wifi_pkt, len, subtype, device)) {
     if(!device->matches(ownMacAddress) && (!onlyIndividualDevices || device->isIndividual())) {
       result = true;
 
@@ -560,7 +559,7 @@ bool Approximate::parseMgmtPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len
   bool result = false;
 
   Device *device = new Device();
-  if(wifi_mgmt_frame_to_Device(wifi_pkt, len, subtype, device)) {
+  if(PacketSniffer::parseMgmtFrame(wifi_pkt, len, subtype, device)) {
     if(!device->matches(ownMacAddress) && (!onlyIndividualDevices || device->isIndividual())) {
       result = true;
 
@@ -601,7 +600,7 @@ bool Approximate::parseDataPacket(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t pay
   bool result = false;
 
   Device *device = new Device();
-  if(Approximate::wifi_promiscuous_pkt_to_Device(wifi_pkt, payloadLengthBytes, device)) {
+  if(PacketSniffer::parseDataFrame(wifi_pkt, payloadLengthBytes, device)) {
     if(!device -> matches(ownMacAddress) && (!onlyIndividualDevices || device -> isIndividual())) {
       result = true;
       if(proximateDeviceHandler) {
@@ -648,7 +647,7 @@ void Approximate::parseChannelStateInformation(wifi_csi_info_t *info) {
   #if defined(ESP32)
     if(channelStateHandler) {
       Channel *channel = new Channel();
-      if(wifi_csi_info_to_Channel(info, channel)) {
+      if(PacketSniffer::parseCSI(info, channel)) {
         //TODO: apply filtering
         channelStateHandler(channel);
       }
@@ -737,364 +736,59 @@ bool Approximate::canResolve(ip4_addr_t &ipaddr) {
   return(result);
 }
 
+// MAC utility static methods - delegate to free functions for API compatibility
 bool Approximate::MacAddr_to_eth_addr(MacAddr *in, eth_addr &out) {
-  bool success = true;
-
-  for(int n=0; n<6; ++n) out.addr[n] = in->mac[n];
-
-  return(success);
+  return ::MacAddr_to_eth_addr(in, out);
 }
 
 bool Approximate::uint8_t_to_eth_addr(uint8_t *in, eth_addr &out) {
-  bool success = true;
-
-  for(int n=0; n<6; ++n) out.addr[n] = in[n];
-
-  return(success);
+  return ::uint8_t_to_eth_addr(in, out);
 }
 
 bool Approximate::oui_to_eth_addr(int oui, eth_addr &out) {
-  bool success = true;
-
-  out.addr[0] = (oui >> 16) & 0xFF;
-  out.addr[1] = (oui >> 8) & 0xFF;
-  out.addr[2] = (oui >> 0) & 0xFF;
-  out.addr[3] = 0xFF;
-  out.addr[4] = 0xFF;
-  out.addr[5] = 0xFF;
-
-  return(success);
+  return ::oui_to_eth_addr(oui, out);
 }
 
 bool Approximate::String_to_eth_addr(String &in, eth_addr &out) {
-  bool success = c_str_to_eth_addr(in.c_str(), out);
-
-  return(success);
+  return ::String_to_eth_addr(in, out);
 }
 
 bool Approximate::c_str_to_eth_addr(const char *in, eth_addr &out) {
-  bool success = false;
-
-  //clear:
-  for(int n=0; n<6; ++n) out.addr[n] = 0;
-
-  //basic format test ##:##:##:##:##:##
-  if(strlen(in) == 17) {
-    int a, b, c, d, e, f;
-    sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
-
-    out.addr[0] = a;
-    out.addr[1] = b;
-    out.addr[2] = c;
-    out.addr[3] = d;
-    out.addr[4] = e;
-    out.addr[5] = f;
-
-    success = true;
-  }
-
-  return(success);
+  return ::c_str_to_eth_addr(in, out);
 }
 
 bool Approximate::c_str_to_MacAddr(const char *in, MacAddr &out) {
-  bool success = false;
-
-  //clear:
-  for(int n=0; n<6; ++n) out.mac[n] = 0;
-
-  //basic format test ##:##:##:##:##:##
-  if(strlen(in) == 17) {
-    int a, b, c, d, e, f;
-    sscanf(in, "%x:%x:%x:%x:%x:%x", &a, &b, &c, &d, &e, &f);
-
-    out.mac[0] = a;
-    out.mac[1] = b;
-    out.mac[2] = c;
-    out.mac[3] = d;
-    out.mac[4] = e;
-    out.mac[5] = f;
-    
-    success = true;
-  } 
-
-  return(success);
+  return ::c_str_to_MacAddr(in, out);
 }
 
 bool Approximate::eth_addr_to_String(eth_addr &in, String &out) {
-  bool success = true;
-
-  char macAddressAsCharArray[18];
-  eth_addr_to_c_str(in, macAddressAsCharArray);
-  out = String(macAddressAsCharArray);
-
-  return(success);
+  return ::eth_addr_to_String(in, out);
 }
 
 bool Approximate::eth_addr_to_c_str(eth_addr &in, char *out) {
-  bool success = true;
-
-  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in.addr[0], in.addr[1], in.addr[2], in.addr[3], in.addr[4], in.addr[5]);
-
-  return(success);
+  return ::eth_addr_to_c_str(in, out);
 }
 
 bool Approximate::MacAddr_to_c_str(MacAddr *in, char *out) {
-  bool success = true;
-
-  sprintf(out, "%02X:%02X:%02X:%02X:%02X:%02X\0", in->mac[0], in->mac[1], in->mac[2], in->mac[3], in->mac[4], in->mac[5]);
-
-  return(success);
+  return ::MacAddr_to_c_str(in, out);
 }
 
 bool Approximate::MacAddr_to_oui(MacAddr *in, int &out) {
-  bool success = true;
-
-  out = ((in->mac[0] << 16) & 0xFF0000) | ((in->mac[1] << 8) & 0xFF00) | ((in->mac[2] << 0) & 0xFF);
-
-  return(success);
+  return ::MacAddr_to_oui(in, out);
 }
 
 bool Approximate::MacAddr_to_MacAddr(MacAddr *in, MacAddr &out) {
-  bool success = true;
-
-  for(int n=0; n<6; ++n) out.mac[n] = in -> mac[n];
-
-  return(success);
+  return ::MacAddr_to_MacAddr(in, out);
 }
 
 String Approximate::getCountryCode() {
-  return String(countryCode);
+  return PacketSniffer::getCountryCode();
 }
 
 char Approximate::getCountryEnvironment() {
-  return countryEnvironment;
+  return PacketSniffer::getCountryEnvironment();
 }
 
 bool Approximate::hasCountryInfo() {
-  return (countryCode[0] != 0);
-}
-
-bool Approximate::wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
-  bool success = false;
-
-  Packet *packet = new Packet();
-  if(wifi_pkt && device && packet) {
-    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt -> rx_ctrl);
-    packet -> rssi = rx_ctrl->rssi;
-    packet -> channel = rx_ctrl->channel;
-    packet -> payloadLengthBytes = payloadLengthBytes;
-
-    //802.11 packet
-    wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
-    MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
-    MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
-
-    wifi_80211_fctl *fctl = &(frame -> fctl);
-    byte ds = fctl -> ds;
-    if(ds == 1 && eth_addr_cmp(&(packet -> dst), &localBSSID)) {
-      //packet sent by this device
-      device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
-      ArpTable::lookupIPAddress(device);
-      success = true;
-    }
-    else if(ds == 2 && eth_addr_cmp(&(packet -> src), &localBSSID)) {
-      //packet sent to this device - RSSI only informative for messages from device
-      device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
-      ArpTable::lookupIPAddress(device);
-      success = true;
-    }
-    else {
-      //not associated with this bssid - not on this network
-    }
-  }
-  delete(packet);
-  
-  return(success);
-}
-
-bool Approximate::wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype, Device *device) {
-  bool success = false;
-
-  if(wifi_pkt && device) {
-    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
-
-    // Management frame header: Addr1=DA, Addr2=SA (transmitter), Addr3=BSSID
-    wifi_80211_mgmt_frame *frame = (wifi_80211_mgmt_frame *) wifi_pkt->payload;
-
-    eth_addr srcAddr;
-    MacAddr_to_eth_addr(&(frame->addr2), srcAddr);
-
-    // Skip broadcast/multicast source addresses
-    if(srcAddr.addr[0] & 0x01) return false;
-    // Skip junk MACs (last 3 bytes all zero)
-    if(srcAddr.addr[3] == 0x0 && srcAddr.addr[4] == 0x0 && srcAddr.addr[5] == 0x0) return false;
-
-    eth_addr bssidAddr;
-    MacAddr_to_eth_addr(&(frame->addr3), bssidAddr);
-
-    int rssi = rx_ctrl->rssi;
-    int channel = rx_ctrl->channel;
-
-    // Calculate the size of the management frame header
-    const size_t mgmt_hdr_size = sizeof(wifi_80211_mgmt_frame);
-
-    switch(subtype) {
-      case PROBE_REQ:
-        // Probe requests are sent by all WiFi devices scanning for networks.
-        // The source MAC (addr2) is the device transmitting the probe.
-        // Probe requests often have broadcast BSSID (FF:FF:FF:FF:FF:FF).
-        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
-        ArpTable::lookupIPAddress(device);
-
-        // Parse Information Elements looking for SSID (IE id 0)
-        if(len > mgmt_hdr_size) {
-          const uint8_t *ie_ptr = frame->payload;
-          size_t ie_remaining = len - mgmt_hdr_size;
-
-          while(ie_remaining >= 2) {
-            const wifi_80211_ie *ie = (const wifi_80211_ie *) ie_ptr;
-            if(ie_remaining < (size_t)(2 + ie->length)) break;
-
-            if(ie->id == IE_SSID && ie->length > 0 && ie->length <= 32) {
-              char ssid_buf[33];
-              memcpy(ssid_buf, ie->data, ie->length);
-              ssid_buf[ie->length] = '\0';
-              device->setSSID(ssid_buf);
-            }
-
-            ie_ptr += 2 + ie->length;
-            ie_remaining -= 2 + ie->length;
-          }
-        }
-
-        success = true;
-        break;
-
-      case PROBE_RES:
-      case BEACON:
-        // Probe responses and beacons are sent by APs.
-        // Addr2=SA is the AP's MAC, Addr3=BSSID is the network BSSID.
-        // Only process if from the local network's BSSID.
-        if(eth_addr_cmp(&bssidAddr, &localBSSID)) {
-          device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
-
-          // Parse Country IE from beacon/probe response body.
-          // Frame body starts after mgmt header with 12 bytes of fixed fields:
-          //   8-byte timestamp + 2-byte beacon interval + 2-byte capability info
-          const size_t fixedFieldsSize = 12;
-          if(len > mgmt_hdr_size + fixedFieldsSize) {
-            const uint8_t *ie_ptr = frame->payload + fixedFieldsSize;
-            size_t ie_remaining = len - mgmt_hdr_size - fixedFieldsSize;
-
-            while(ie_remaining >= 2) {
-              const wifi_80211_ie *ie = (const wifi_80211_ie *) ie_ptr;
-              if(ie_remaining < (size_t)(2 + ie->length)) break;
-
-              if(ie->id == IE_COUNTRY && ie->length >= 3) {
-                countryCode[0] = (char) ie->data[0];
-                countryCode[1] = (char) ie->data[1];
-                countryCode[2] = '\0';
-                countryEnvironment = (char) ie->data[2];
-              }
-
-              ie_ptr += 2 + ie->length;
-              ie_remaining -= 2 + ie->length;
-            }
-          }
-
-          success = true;
-        }
-        break;
-
-      case AUTHENTICATION:
-      case ASSOCIATION_REQ:
-      case REASSOCIATION_REQ:
-        // Auth/assoc requests from clients contain the client's MAC in addr2.
-        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
-        ArpTable::lookupIPAddress(device);
-        success = true;
-        break;
-
-      case DEAUTHENTICATION:
-      case DISASSOCIATION:
-        // Deauth/disassoc frames - the source addr2 is the sender.
-        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
-        success = true;
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  return(success);
-}
-
-bool Approximate::wifi_ctrl_frame_to_Device(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype, Device *device) {
-  bool success = false;
-
-  if(wifi_pkt && device) {
-    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
-    int rssi = rx_ctrl->rssi;
-    int channel = rx_ctrl->channel;
-
-    eth_addr deviceAddr;
-    eth_addr emptyBssid = {{0,0,0,0,0,0}};
-
-    switch(subtype) {
-      case CTRL_RTS:
-      case CTRL_BLOCK_ACK_REQ:
-      case CTRL_BLOCK_ACK:
-      case CTRL_PS_POLL: {
-        // These frames have both RA (addr1) and TA (addr2).
-        // The transmitter address (addr2) identifies the sending device.
-        wifi_80211_ctrl_rts_frame *frame = (wifi_80211_ctrl_rts_frame *) wifi_pkt->payload;
-        MacAddr_to_eth_addr(&(frame->addr2), deviceAddr);
-
-        // Skip broadcast/multicast
-        if(deviceAddr.addr[0] & 0x01) return false;
-        if(deviceAddr.addr[3] == 0x0 && deviceAddr.addr[4] == 0x0 && deviceAddr.addr[5] == 0x0) return false;
-
-        device->init(deviceAddr, emptyBssid, channel, rssi, millis(), 0);
-        ArpTable::lookupIPAddress(device);
-        success = true;
-        break;
-      }
-
-      case CTRL_CTS:
-      case CTRL_ACK: {
-        // CTS and ACK frames have only RA (addr1) - the receiver address.
-        // The RSSI is from the device that transmitted this frame, but we only
-        // know who they're talking TO (the RA). We skip these since we can't
-        // reliably identify the transmitter.
-        break;
-      }
-
-      default:
-        break;
-    }
-  }
-
-  return(success);
-}
-
-bool Approximate::wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel) {
-  bool success = false;
-
-  #if defined(ESP32)
-    if(info->len >= 128) {
-      eth_addr thisBssid;
-      uint8_t_to_eth_addr(info -> mac, thisBssid);
-
-      //Filter this network:
-      if(eth_addr_cmp(&thisBssid, &localBSSID)) {
-        channel -> setBssid(thisBssid);
-        channel -> setBuffer(info->buf);
-
-        success = true;
-      }
-    }
-  #endif
-
-  return(success);
+  return PacketSniffer::hasCountryInfo();
 }

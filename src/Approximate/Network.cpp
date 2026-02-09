@@ -8,7 +8,7 @@
 */
 
 #include "Network.h"
-#include "Approximate.h"
+#include "eth_addr.h"
 
 Network::Network() {
 }
@@ -29,13 +29,13 @@ void Network::getBssid(eth_addr &bssid) {
 String Network::getBssidAsString() {
     String bssidAsString = "";
 
-    Approximate::eth_addr_to_String(bssid, bssidAsString);
+    eth_addr_to_String(bssid, bssidAsString);
 
     return(bssidAsString);
 }
 
 char *Network::getBssidAs_c_str(char *out) {
-    Approximate::eth_addr_to_c_str(bssid, out);
+    eth_addr_to_c_str(bssid, out);
     
     return(out);
 }

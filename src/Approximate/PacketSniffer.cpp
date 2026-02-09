@@ -13,6 +13,10 @@ PacketSniffer::PacketEventHandler PacketSniffer::packetEventHandler = NULL;
 PacketSniffer::ChannelEventHandler PacketSniffer::channelEventHandler = NULL;
 bool PacketSniffer::running = false;
 
+eth_addr PacketSniffer::localBSSID = {{0,0,0,0,0,0}};
+char PacketSniffer::countryCode[3] = {0};
+char PacketSniffer::countryEnvironment = 0;
+
 PacketSniffer::PacketSniffer() {
   Serial.println("PacketSniffer::PacketSniffer");
 }
@@ -216,4 +220,245 @@ void PacketSniffer::csiCallback_32(void *ctx, wifi_csi_info_t *data) {
   if (running && channelEventHandler) {
     channelEventHandler(data);
   }
+}
+
+void PacketSniffer::setLocalBSSID(eth_addr &bssid) {
+  ETHADDR16_COPY(&localBSSID, &bssid);
+}
+
+String PacketSniffer::getCountryCode() {
+  return String(countryCode);
+}
+
+char PacketSniffer::getCountryEnvironment() {
+  return countryEnvironment;
+}
+
+bool PacketSniffer::hasCountryInfo() {
+  return (countryCode[0] != 0);
+}
+
+bool PacketSniffer::parseMgmtFrame(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype, Device *device) {
+  bool success = false;
+
+  if(wifi_pkt && device) {
+    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
+
+    // Management frame header: Addr1=DA, Addr2=SA (transmitter), Addr3=BSSID
+    wifi_80211_mgmt_frame *frame = (wifi_80211_mgmt_frame *) wifi_pkt->payload;
+
+    eth_addr srcAddr;
+    MacAddr_to_eth_addr(&(frame->addr2), srcAddr);
+
+    // Skip broadcast/multicast source addresses
+    if(srcAddr.addr[0] & 0x01) return false;
+    // Skip junk MACs (last 3 bytes all zero)
+    if(srcAddr.addr[3] == 0x0 && srcAddr.addr[4] == 0x0 && srcAddr.addr[5] == 0x0) return false;
+
+    eth_addr bssidAddr;
+    MacAddr_to_eth_addr(&(frame->addr3), bssidAddr);
+
+    int rssi = rx_ctrl->rssi;
+    int channel = rx_ctrl->channel;
+
+    // Calculate the size of the management frame header
+    const size_t mgmt_hdr_size = sizeof(wifi_80211_mgmt_frame);
+
+    switch(subtype) {
+      case PROBE_REQ:
+        // Probe requests are sent by all WiFi devices scanning for networks.
+        // The source MAC (addr2) is the device transmitting the probe.
+        // Probe requests often have broadcast BSSID (FF:FF:FF:FF:FF:FF).
+        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+        ArpTable::lookupIPAddress(device);
+
+        // Parse Information Elements looking for SSID (IE id 0)
+        if(len > mgmt_hdr_size) {
+          const uint8_t *ie_ptr = frame->payload;
+          size_t ie_remaining = len - mgmt_hdr_size;
+
+          while(ie_remaining >= 2) {
+            const wifi_80211_ie *ie = (const wifi_80211_ie *) ie_ptr;
+            if(ie_remaining < (size_t)(2 + ie->length)) break;
+
+            if(ie->id == IE_SSID && ie->length > 0 && ie->length <= 32) {
+              char ssid_buf[33];
+              memcpy(ssid_buf, ie->data, ie->length);
+              ssid_buf[ie->length] = '\0';
+              device->setSSID(ssid_buf);
+            }
+
+            ie_ptr += 2 + ie->length;
+            ie_remaining -= 2 + ie->length;
+          }
+        }
+
+        success = true;
+        break;
+
+      case PROBE_RES:
+      case BEACON:
+        // Probe responses and beacons are sent by APs.
+        // Addr2=SA is the AP's MAC, Addr3=BSSID is the network BSSID.
+        // Only process if from the local network's BSSID.
+        if(eth_addr_cmp(&bssidAddr, &localBSSID)) {
+          device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+
+          // Parse Country IE from beacon/probe response body.
+          // Frame body starts after mgmt header with 12 bytes of fixed fields:
+          //   8-byte timestamp + 2-byte beacon interval + 2-byte capability info
+          const size_t fixedFieldsSize = 12;
+          if(len > mgmt_hdr_size + fixedFieldsSize) {
+            const uint8_t *ie_ptr = frame->payload + fixedFieldsSize;
+            size_t ie_remaining = len - mgmt_hdr_size - fixedFieldsSize;
+
+            while(ie_remaining >= 2) {
+              const wifi_80211_ie *ie = (const wifi_80211_ie *) ie_ptr;
+              if(ie_remaining < (size_t)(2 + ie->length)) break;
+
+              if(ie->id == IE_COUNTRY && ie->length >= 3) {
+                countryCode[0] = (char) ie->data[0];
+                countryCode[1] = (char) ie->data[1];
+                countryCode[2] = '\0';
+                countryEnvironment = (char) ie->data[2];
+              }
+
+              ie_ptr += 2 + ie->length;
+              ie_remaining -= 2 + ie->length;
+            }
+          }
+
+          success = true;
+        }
+        break;
+
+      case AUTHENTICATION:
+      case ASSOCIATION_REQ:
+      case REASSOCIATION_REQ:
+        // Auth/assoc requests from clients contain the client's MAC in addr2.
+        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+        ArpTable::lookupIPAddress(device);
+        success = true;
+        break;
+
+      case DEAUTHENTICATION:
+      case DISASSOCIATION:
+        // Deauth/disassoc frames - the source addr2 is the sender.
+        device->init(srcAddr, bssidAddr, channel, rssi, millis(), 0);
+        success = true;
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return(success);
+}
+
+bool PacketSniffer::parseCtrlFrame(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t len, int subtype, Device *device) {
+  bool success = false;
+
+  if(wifi_pkt && device) {
+    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt->rx_ctrl);
+    int rssi = rx_ctrl->rssi;
+    int channel = rx_ctrl->channel;
+
+    eth_addr deviceAddr;
+    eth_addr emptyBssid = {{0,0,0,0,0,0}};
+
+    switch(subtype) {
+      case CTRL_RTS:
+      case CTRL_BLOCK_ACK_REQ:
+      case CTRL_BLOCK_ACK:
+      case CTRL_PS_POLL: {
+        // These frames have both RA (addr1) and TA (addr2).
+        // The transmitter address (addr2) identifies the sending device.
+        wifi_80211_ctrl_rts_frame *frame = (wifi_80211_ctrl_rts_frame *) wifi_pkt->payload;
+        MacAddr_to_eth_addr(&(frame->addr2), deviceAddr);
+
+        // Skip broadcast/multicast
+        if(deviceAddr.addr[0] & 0x01) return false;
+        if(deviceAddr.addr[3] == 0x0 && deviceAddr.addr[4] == 0x0 && deviceAddr.addr[5] == 0x0) return false;
+
+        device->init(deviceAddr, emptyBssid, channel, rssi, millis(), 0);
+        ArpTable::lookupIPAddress(device);
+        success = true;
+        break;
+      }
+
+      case CTRL_CTS:
+      case CTRL_ACK: {
+        // CTS and ACK frames have only RA (addr1) - the receiver address.
+        // The RSSI is from the device that transmitted this frame, but we only
+        // know who they're talking TO (the RA). We skip these since we can't
+        // reliably identify the transmitter.
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
+  return(success);
+}
+
+bool PacketSniffer::parseDataFrame(wifi_promiscuous_pkt_t *wifi_pkt, uint16_t payloadLengthBytes, Device *device) {
+  bool success = false;
+
+  Packet *packet = new Packet();
+  if(wifi_pkt && device && packet) {
+    wifi_pkt_rx_ctrl_t *rx_ctrl = &(wifi_pkt -> rx_ctrl);
+    packet -> rssi = rx_ctrl->rssi;
+    packet -> channel = rx_ctrl->channel;
+    packet -> payloadLengthBytes = payloadLengthBytes;
+
+    //802.11 packet
+    wifi_80211_data_frame* frame = (wifi_80211_data_frame*) wifi_pkt -> payload;
+    MacAddr_to_eth_addr(&(frame -> sa), packet -> src);
+    MacAddr_to_eth_addr(&(frame -> da), packet -> dst);
+
+    wifi_80211_fctl *fctl = &(frame -> fctl);
+    byte ds = fctl -> ds;
+    if(ds == 1 && eth_addr_cmp(&(packet -> dst), &localBSSID)) {
+      //packet sent by this device
+      device -> init(packet -> src, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes * -1);
+      ArpTable::lookupIPAddress(device);
+      success = true;
+    }
+    else if(ds == 2 && eth_addr_cmp(&(packet -> src), &localBSSID)) {
+      //packet sent to this device - RSSI only informative for messages from device
+      device -> init(packet -> dst, localBSSID, packet -> channel, packet -> rssi, millis(), packet -> payloadLengthBytes);
+      ArpTable::lookupIPAddress(device);
+      success = true;
+    }
+    else {
+      //not associated with this bssid - not on this network
+    }
+  }
+  delete(packet);
+
+  return(success);
+}
+
+bool PacketSniffer::parseCSI(wifi_csi_info_t *info, Channel *channel) {
+  bool success = false;
+
+  #if defined(ESP32)
+    if(info->len >= 128) {
+      eth_addr thisBssid;
+      uint8_t_to_eth_addr(info -> mac, thisBssid);
+
+      //Filter this network:
+      if(eth_addr_cmp(&thisBssid, &localBSSID)) {
+        channel -> setBssid(thisBssid);
+        channel -> setBuffer(info->buf);
+
+        success = true;
+      }
+    }
+  #endif
+
+  return(success);
 }

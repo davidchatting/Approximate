@@ -96,9 +96,6 @@ class Approximate {
     static bool parseDataPacket(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLength);
     static bool parseMiscPacket(wifi_promiscuous_pkt_t *pkt);
 
-    static bool wifi_mgmt_frame_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype, Device *device);
-    static bool wifi_ctrl_frame_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype, Device *device);
-
     static void parseChannelStateInformation(wifi_csi_info_t *info);
 
     static DeviceHandler activeDeviceHandler;
@@ -110,8 +107,6 @@ class Approximate {
     static eth_addr ownMacAddress;
 
     static eth_addr localBSSID;
-    static char countryCode[3];
-    static char countryEnvironment;
     static List<Filter *> activeDeviceFilterList;
     static bool applyDeviceFilters(Device *device);
 
@@ -122,9 +117,6 @@ class Approximate {
     static int proximateLastSeenTimeoutMs;
 
     void printWiFiStatus();
-
-    static bool wifi_promiscuous_pkt_to_Device(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
-    static bool wifi_csi_info_to_Channel(wifi_csi_info_t *info, Channel *channel);
 
   public:
     Approximate();

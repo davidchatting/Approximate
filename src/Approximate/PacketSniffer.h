@@ -13,6 +13,10 @@
 #include <Arduino.h>
 #include "eth_addr.h"
 #include "wifi_pkt.h"
+#include "Device.h"
+#include "Channel.h"
+#include "Packet.h"
+#include "ArpTable.h"
 
 class PacketSniffer {
   public:
@@ -34,6 +38,20 @@ class PacketSniffer {
 
     typedef void (*ChannelEventHandler)(wifi_csi_info_t *data);
     void setChannelEventHandler(ChannelEventHandler channelEventHandler);
+
+    // Low-level frame parsing
+    static bool parseMgmtFrame(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype, Device *device);
+    static bool parseCtrlFrame(wifi_promiscuous_pkt_t *pkt, uint16_t len, int subtype, Device *device);
+    static bool parseDataFrame(wifi_promiscuous_pkt_t *pkt, uint16_t payloadLengthBytes, Device *device);
+    static bool parseCSI(wifi_csi_info_t *info, Channel *channel);
+
+    // Local BSSID management
+    static void setLocalBSSID(eth_addr &bssid);
+
+    // Country info parsed from beacons
+    static String getCountryCode();
+    static char getCountryEnvironment();
+    static bool hasCountryInfo();
 
   private:
     PacketSniffer();
@@ -57,6 +75,10 @@ class PacketSniffer {
 
     static PacketEventHandler packetEventHandler;
     static ChannelEventHandler channelEventHandler;
+
+    static eth_addr localBSSID;
+    static char countryCode[3];
+    static char countryEnvironment;
 };
 
 #endif

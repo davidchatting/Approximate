@@ -8,7 +8,7 @@
 */
 
 #include "Device.h"
-#include "Approximate.h"
+#include "eth_addr.h"
 
 Device::Device() {
     ipAddress.addr = IPADDR_ANY;
@@ -64,13 +64,13 @@ void Device::getMacAddress(eth_addr &macAddress) {
 String Device::getMacAddressAsString() {
     String macAddressAsString = "";
 
-    Approximate::eth_addr_to_String(macAddress, macAddressAsString);
+    eth_addr_to_String(macAddress, macAddressAsString);
 
     return(macAddressAsString);
 }
 
 char *Device::getMacAddressAs_c_str(char *out) {
-    Approximate::eth_addr_to_c_str(macAddress, out);
+    eth_addr_to_c_str(macAddress, out);
     
     return(out);
 }

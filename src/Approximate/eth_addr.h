@@ -34,4 +34,19 @@ struct __attribute__((packed)) MacAddr {
   }
 };
 
+#include <Arduino.h>
+
+// Free functions for MAC address conversion utilities
+bool MacAddr_to_eth_addr(MacAddr *in, eth_addr &out);
+bool uint8_t_to_eth_addr(uint8_t *in, eth_addr &out);
+bool oui_to_eth_addr(int oui, eth_addr &out);
+bool c_str_to_eth_addr(const char *in, eth_addr &out);
+bool c_str_to_MacAddr(const char *in, MacAddr &out);
+bool String_to_eth_addr(String &in, eth_addr &out);
+bool eth_addr_to_String(eth_addr &in, String &out);
+bool eth_addr_to_c_str(eth_addr &in, char *out);
+bool MacAddr_to_c_str(MacAddr *in, char *out);
+bool MacAddr_to_oui(MacAddr *in, int &out);
+bool MacAddr_to_MacAddr(MacAddr *in, MacAddr &out);
+
 #endif
