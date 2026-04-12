@@ -1,8 +1,5 @@
 name: esp32
 on: [push, pull_request, workflow_dispatch]
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     name: Test compile examples for esp32
@@ -12,11 +9,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Install arduino-cli
-      uses: arduino/setup-arduino-cli@v2
-
     - name: Install ListLib from source
       run: |
+        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+        arduino-cli config init
         arduino-cli config set library.enable_unsafe_install true
         arduino-cli lib install --git-url https://github.com/luisllamasbinaburo/Arduino-List.git
 
