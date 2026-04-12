@@ -38,15 +38,22 @@ bool Approximate::init(String ssid, String password, bool ipAddressResolution, b
 
   if(ssid.length() > 0) {
     int n = WiFi.scanNetworks();
-    for (int i = 0; i < n && !success; ++i) {
-      if(WiFi.SSID(i) == ssid) {
-        if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
-          //Network is either open or a password is supplied
-          strcpy(this->ssid, ssid.c_str());
-          strcpy(this->password, password.c_str());
+    // Two-pass scan: prefer 2.4GHz (channels 1-14) before falling back to 5GHz.
+    // This ensures the sniffer starts on 2.4GHz when both bands are available,
+    // which is more useful for detecting a wider range of nearby devices.
+    for (int pass = 0; pass < 2 && !success; ++pass) {
+      for (int i = 0; i < n && !success; ++i) {
+        bool is_2ghz = (WiFi.channel(i) <= 14);
+        if (pass == 0 && !is_2ghz) continue;  // first pass: 2.4GHz only
+        if(WiFi.SSID(i) == ssid) {
+          if(WiFi.encryptionType(i) == 0x7 || password.length() > 0) {
+            //Network is either open or a password is supplied
+            strcpy(this->ssid, ssid.c_str());
+            strcpy(this->password, password.c_str());
 
-          if(initBlind(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
-            success = true;
+            if(initBlind(WiFi.channel(i), WiFi.BSSID(i), ipAddressResolution, csiEnabled, onlyIndividualDevices)) {
+              success = true;
+            }
           }
         }
       }
