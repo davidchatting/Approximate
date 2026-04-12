@@ -13,7 +13,9 @@ jobs:
       uses: arduino/setup-arduino-cli@v2
 
     - name: Install ListLib from source
-      run: arduino-cli lib install --git-url https://github.com/luisllamasbinaburo/Arduino-List.git
+      run: |
+        arduino-cli config set library.enable_unsafe_install true
+        arduino-cli lib install --git-url https://github.com/luisllamasbinaburo/Arduino-List.git
 
     - name: Compile all examples
       uses: ArminJo/arduino-test-compile@master
