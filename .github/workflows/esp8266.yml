@@ -9,10 +9,16 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Install arduino-cli
+      uses: arduino/setup-arduino-cli@v2
+
+    - name: Install ListLib from source
+      run: arduino-cli lib install --git-url https://github.com/luisllamasbinaburo/Arduino-List.git
+
     - name: Compile all examples
       uses: ArminJo/arduino-test-compile@master
       with:
         arduino-board-fqbn: esp8266:esp8266:generic
         platform-url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
         extra-arduino-cli-args: "--warnings default"
-        required-libraries: ListLib,ArduinoJson,StreamUtils,PubSubClient,AceButton
+        required-libraries: ArduinoJson,StreamUtils,PubSubClient,AceButton

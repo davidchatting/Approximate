@@ -9,6 +9,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Install arduino-cli
+      uses: arduino/setup-arduino-cli@v2
+
+    - name: Install ListLib from source
+      run: arduino-cli lib install --git-url https://github.com/luisllamasbinaburo/Arduino-List.git
+
     - name: Compile all examples
       uses: ArminJo/arduino-test-compile@master
       with:
@@ -16,4 +22,4 @@ jobs:
         platform-url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
         arduino-platform: esp32:esp32
         extra-arduino-cli-args: "--warnings default"
-        required-libraries: ListLib,ArduinoJson,StreamUtils,PubSubClient,AceButton
+        required-libraries: ArduinoJson,StreamUtils,PubSubClient,AceButton
