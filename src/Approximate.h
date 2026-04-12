@@ -29,6 +29,15 @@
 #define APPROXIMATE_SOCIAL_RSSI -60
 #define APPROXIMATE_PUBLIC_RSSI -80
 
+// Band selection for init(). Uses ESP-IDF wifi_band_t on ESP32.
+// On ESP8266 (2.4GHz only) the parameter is accepted but ignored.
+#if defined(ESP32)
+  #include <esp_wifi.h>
+  // wifi_band_t is provided by esp_wifi.h: WIFI_BAND_2G = 1, WIFI_BAND_5G = 2
+#else
+  typedef enum { WIFI_BAND_2G = 1, WIFI_BAND_5G = 2 } wifi_band_t;
+#endif
+
 class Approximate {
   public:
     typedef enum {
@@ -123,7 +132,7 @@ class Approximate {
 
   public:
     Approximate();
-    bool init(String ssid, String password, bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true);
+    bool init(String ssid, String password, bool ipAddressResolution = false, bool csiEnabled = false, bool onlyIndividualDevices = true, wifi_band_t band = WIFI_BAND_2G);
 
     void begin(voidFnPtr thenFnPtr = NULL);
     void end();
