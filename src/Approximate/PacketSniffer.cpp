@@ -69,13 +69,32 @@ bool PacketSniffer::begin() {
         //WiFi must be initialized by esp_wifi_init() + WiFi must be started by esp_wifi_start() + promiscuous mode must be enabled
 
         wifi_csi_config_t configuration_csi;
-        configuration_csi.lltf_en = true;
-        configuration_csi.htltf_en = true;
-        configuration_csi.stbc_htltf2_en = true;
-        configuration_csi.ltf_merge_en = true;
-        configuration_csi.channel_filter_en = true;
-        configuration_csi.manu_scale = true;
-        configuration_csi.shift = 0; // 0->15
+        #if CONFIG_SOC_WIFI_MAC_VERSION_NUM == 3
+          // ESP32-C5 and other WiFi MAC v3 chips use the extended HE CSI acquire config
+          configuration_csi.enable = true;
+          configuration_csi.acquire_csi_legacy = true;
+          configuration_csi.acquire_csi_force_lltf = false;
+          configuration_csi.acquire_csi_ht20 = true;
+          configuration_csi.acquire_csi_ht40 = false;
+          configuration_csi.acquire_csi_vht = false;
+          configuration_csi.acquire_csi_su = true;
+          configuration_csi.acquire_csi_mu = false;
+          configuration_csi.acquire_csi_dcm = false;
+          configuration_csi.acquire_csi_beamformed = false;
+          configuration_csi.acquire_csi_he_stbc_mode = 0;
+          configuration_csi.val_scale_cfg = 0;
+          configuration_csi.dump_ack_en = false;
+          configuration_csi.lltf_bit_mode = 0;
+          configuration_csi.reserved = 0;
+        #else
+          configuration_csi.lltf_en = true;
+          configuration_csi.htltf_en = true;
+          configuration_csi.stbc_htltf2_en = true;
+          configuration_csi.ltf_merge_en = true;
+          configuration_csi.channel_filter_en = true;
+          configuration_csi.manu_scale = true;
+          configuration_csi.shift = 0; // 0->15
+        #endif
 
         esp_wifi_set_csi_config(&configuration_csi);
         esp_wifi_set_csi_rx_cb(&csiCallback_32, NULL);
