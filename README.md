@@ -447,4 +447,4 @@ The Approximate library has learnt much from the work of others, including:
 
 ## Author
 
-The Approximate library was created by David Chatting ([@davidchatting](https://twitter.com/davidchatting)) as part of the [A Network of One's Own](http://davidchatting.com/nooo/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
+The Approximate library was created by ([David Chatting](https://github.com/davidchatting)) as part of the [A Network of One's Own](http://davidchatting.com/nooo/) project. Collaboration welcome - please contribute by raising issues and making pull requests via GitHub. This code is licensed under the [MIT License](LICENSE.txt).
