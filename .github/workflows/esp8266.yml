@@ -1,5 +1,8 @@
 name: esp8266
 on: [push, pull_request, workflow_dispatch]
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Test compile examples for esp8266
