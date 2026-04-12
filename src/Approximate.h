@@ -33,7 +33,12 @@
 // On ESP8266 (2.4GHz only) the parameter is accepted but ignored.
 #if defined(ESP32)
   #include <esp_wifi.h>
-  // wifi_band_t is provided by esp_wifi.h: WIFI_BAND_2G = 1, WIFI_BAND_5G = 2
+  #include <esp_idf_version.h>
+  // wifi_band_t was added in ESP-IDF 5.1 (Arduino ESP32 3.x).
+  // Define a compatible fallback for older cores.
+  #if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5, 1, 0)
+    typedef enum { WIFI_BAND_2G = 1, WIFI_BAND_5G = 2 } wifi_band_t;
+  #endif
 #else
   typedef enum { WIFI_BAND_2G = 1, WIFI_BAND_5G = 2 } wifi_band_t;
 #endif
