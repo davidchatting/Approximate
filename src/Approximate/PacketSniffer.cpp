@@ -51,42 +51,36 @@ bool PacketSniffer::begin() {
         }
       #endif
 
-      esp_netif_init();
-      esp_event_loop_create_default();
-      esp_netif_create_default_wifi_sta();
+      #if CONFIG_SOC_WIFI_MAC_VERSION_NUM == 3
+        // ESP32-C5 (WiFi MAC v3 / WiFi 6): WiFi stack is already running via
+        // Approximate::connectWiFi() + Arduino WiFi. Re-initializing or changing
+        // mode to APSTA disrupts the connected STA, and esp_wifi_set_protocol()
+        // is unsupported in dual-band mode. Just enable promiscuous on the
+        // running WiFi stack.
+        esp_wifi_set_promiscuous(true);
+        esp_wifi_set_promiscuous_rx_cb(&rxCallback_32);
+      #else
+        esp_netif_init();
+        esp_event_loop_create_default();
+        // Only create the default STA netif if not already created by Arduino WiFi.
+        if (esp_netif_get_handle_from_ifkey("WIFI_STA_DEF") == NULL) {
+          esp_netif_create_default_wifi_sta();
+        }
 
-      wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-      esp_wifi_init(&cfg);
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        esp_wifi_init(&cfg);
 
-      esp_wifi_set_mode(WIFI_MODE_APSTA);
-      esp_wifi_start();
+        esp_wifi_set_mode(WIFI_MODE_APSTA);
+        esp_wifi_start();
 
-      esp_wifi_set_promiscuous(true);
-      esp_wifi_set_promiscuous_rx_cb(&rxCallback_32);
+        esp_wifi_set_promiscuous(true);
+        esp_wifi_set_promiscuous_rx_cb(&rxCallback_32);
 
-      if(CSI_ENABLED && esp_wifi_set_csi(true) == ESP_OK) {
-        //See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html#_CPPv424esp_wifi_set_promiscuousb
-        //WiFi must be initialized by esp_wifi_init() + WiFi must be started by esp_wifi_start() + promiscuous mode must be enabled
+        if(CSI_ENABLED && esp_wifi_set_csi(true) == ESP_OK) {
+          //See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_wifi.html#_CPPv424esp_wifi_set_promiscuousb
+          //WiFi must be initialized by esp_wifi_init() + WiFi must be started by esp_wifi_start() + promiscuous mode must be enabled
 
-        wifi_csi_config_t configuration_csi;
-        #if CONFIG_SOC_WIFI_MAC_VERSION_NUM == 3
-          // ESP32-C5 and other WiFi MAC v3 chips use the extended HE CSI acquire config
-          configuration_csi.enable = true;
-          configuration_csi.acquire_csi_legacy = true;
-          configuration_csi.acquire_csi_force_lltf = false;
-          configuration_csi.acquire_csi_ht20 = true;
-          configuration_csi.acquire_csi_ht40 = false;
-          configuration_csi.acquire_csi_vht = false;
-          configuration_csi.acquire_csi_su = true;
-          configuration_csi.acquire_csi_mu = false;
-          configuration_csi.acquire_csi_dcm = false;
-          configuration_csi.acquire_csi_beamformed = false;
-          configuration_csi.acquire_csi_he_stbc_mode = 0;
-          configuration_csi.val_scale_cfg = 0;
-          configuration_csi.dump_ack_en = false;
-          configuration_csi.lltf_bit_mode = 0;
-          configuration_csi.reserved = 0;
-        #else
+          wifi_csi_config_t configuration_csi;
           configuration_csi.lltf_en = true;
           configuration_csi.htltf_en = true;
           configuration_csi.stbc_htltf2_en = true;
@@ -94,15 +88,15 @@ bool PacketSniffer::begin() {
           configuration_csi.channel_filter_en = true;
           configuration_csi.manu_scale = true;
           configuration_csi.shift = 0; // 0->15
-        #endif
 
-        esp_wifi_set_csi_config(&configuration_csi);
-        esp_wifi_set_csi_rx_cb(&csiCallback_32, NULL);
+          esp_wifi_set_csi_config(&configuration_csi);
+          esp_wifi_set_csi_rx_cb(&csiCallback_32, NULL);
 
-        Serial.printf("CSI STARTED\n");
-      }
+          Serial.printf("CSI STARTED\n");
+        }
 
-      esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N);
+        esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N);
+      #endif
 
     #endif
     

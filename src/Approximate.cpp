@@ -260,61 +260,17 @@ wl_status_t Approximate::connectWiFi(char *ssid, char *password) {
         WiFi.begin(ssid, password);
 
       #elif defined(ESP32)
-        //WiFi.begin() for the ESP32 (1.0.4) > https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFiSTA.cpp - doesn't call esp_wifi_init() or esp_wifi_start() - which are needed later for esp_wifi_set_csi()
-        esp_netif_init();
-        esp_event_loop_create_default();
-        esp_netif_create_default_wifi_sta();
-
-        if(!WiFi.enableSTA(true)) {
-            log_e("STA enable failed!");
-            return WL_CONNECT_FAILED;
-        }
-
-        if(!ssid || *ssid == 0x00 || strlen(ssid) > 31) {
-            log_e("SSID too long or missing!");
-            return WL_CONNECT_FAILED;
-        }
-
-        if(password && strlen(password) > 64) {
-            log_e("password too long!");
-            return WL_CONNECT_FAILED;
-
-        }
-
-        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-        esp_wifi_init(&cfg);
-
+        // WiFi stack is already initialized by initBlind()'s WiFi.mode(WIFI_STA).
+        // Just set credentials and connect — no netif/wifi reinit needed.
         wifi_config_t conf;
         memset(&conf, 0, sizeof(wifi_config_t));
-        strcpy(reinterpret_cast<char*>(conf.sta.ssid), ssid);
-
-        if(password) {
-            if (strlen(password) == 64){ // it's not a password, is the PSK
-                memcpy(reinterpret_cast<char*>(conf.sta.password), password, 64);
-            } else {
-                strcpy(reinterpret_cast<char*>(conf.sta.password), password);
-            }
-        }
-
-        if(esp_wifi_disconnect()){
-            log_e("disconnect failed!");
-            return WL_CONNECT_FAILED;
+        strncpy(reinterpret_cast<char*>(conf.sta.ssid), ssid, sizeof(conf.sta.ssid) - 1);
+        if (password) {
+            strncpy(reinterpret_cast<char*>(conf.sta.password), password, sizeof(conf.sta.password) - 1);
         }
         esp_wifi_set_config(WIFI_IF_STA, &conf);
+        esp_wifi_connect();
 
-        esp_netif_t *sta_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-        if(sta_netif && esp_netif_dhcpc_start(sta_netif) == ESP_ERR_ESP_NETIF_DHCPC_START_FAILED){
-            log_e("dhcp client start failed!");
-            return WL_CONNECT_FAILED;
-        }
-
-        esp_wifi_start();
-
-        if(esp_wifi_connect()) {
-            log_e("connect failed!");
-            return WL_CONNECT_FAILED;
-        }
-        
       #endif
     }
   }
